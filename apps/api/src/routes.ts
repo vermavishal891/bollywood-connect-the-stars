@@ -443,13 +443,13 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Check TMDB connection
   app.get('/admin/tmdb/status', async () => {
-    const { checkTMDBConnection } = await import('./ingestion');
+    const { checkTMDBConnection } = await import('./ingestion.js');
     return checkTMDBConnection();
   });
 
   // Start full TMDB ingestion
   app.post('/admin/tmdb/ingest', async (request, reply) => {
-    const { ingestBollywoodFromTMDB } = await import('./ingestion');
+    const { ingestBollywoodFromTMDB } = await import('./ingestion.js');
     const body = request.body as {
       actorCount?: number;
       moviePages?: number;
@@ -470,7 +470,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Refresh all TMDB data (wipe and re-ingest)
   app.post('/admin/tmdb/refresh', async (request, reply) => {
-    const { refreshTMDBData } = await import('./ingestion');
+    const { refreshTMDBData } = await import('./ingestion.js');
     const body = request.body as {
       actorCount?: number;
       moviePages?: number;
@@ -492,7 +492,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Start full TMDB ingestion (Hindi movies + all actors from credits)
   app.post('/admin/tmdb/full-ingest', async (request, reply) => {
-    const { runFullTMDBIngestion, resetCheckpoint } = await import('./tmdb-ingestion');
+    const { runFullTMDBIngestion, resetCheckpoint } = await import('./tmdb-ingestion.js');
     const body = request.body as { clearExisting?: boolean };
 
     resetCheckpoint();
@@ -502,7 +502,7 @@ export async function registerRoutes(app: FastifyInstance) {
     try {
       const result = await runFullTMDBIngestion(
         { clearExisting: body.clearExisting },
-        (msg) => console.log(`[${jobId}] ${msg}`)
+        (msg: string) => console.log(`[${jobId}] ${msg}`)
       );
       console.log(`[${jobId}] Full ingestion complete:`, result);
     } catch (err: any) {
@@ -512,20 +512,20 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Get full ingestion progress
   app.get('/admin/tmdb/progress', async () => {
-    const { getProgress } = await import('./tmdb-ingestion');
+    const { getProgress } = await import('./tmdb-ingestion.js');
     return getProgress();
   });
 
   // Cancel running ingestion
   app.post('/admin/tmdb/cancel', async () => {
-    const { cancelIngestion } = await import('./tmdb-ingestion');
+    const { cancelIngestion } = await import('./tmdb-ingestion.js');
     cancelIngestion();
     return { cancelled: true };
   });
 
   // Reset checkpoint
   app.post('/admin/tmdb/reset', async () => {
-    const { resetCheckpoint } = await import('./tmdb-ingestion');
+    const { resetCheckpoint } = await import('./tmdb-ingestion.js');
     resetCheckpoint();
     return { reset: true };
   });
@@ -534,13 +534,13 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Check Wikipedia dataset status
   app.get('/admin/wikipedia/status', async () => {
-    const { checkWikipediaStatus } = await import('./wikipedia-ingestion');
+    const { checkWikipediaStatus } = await import('./wikipedia-ingestion.js');
     return checkWikipediaStatus();
   });
 
   // Ingest from pre-built Wikipedia dataset
   app.post('/admin/wikipedia/ingest', async (request, reply) => {
-    const { ingestFromWikipediaDataset } = await import('./wikipedia-ingestion');
+    const { ingestFromWikipediaDataset } = await import('./wikipedia-ingestion.js');
     const body = request.body as { clearExisting?: boolean };
 
     const jobId = `wiki-ingest-${Date.now()}`;
@@ -556,7 +556,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Run live Wikipedia scraper (background)
   app.post('/admin/wikipedia/scrape', async (request, reply) => {
-    const { runWikipediaScraper } = await import('./wikipedia-ingestion');
+    const { runWikipediaScraper } = await import('./wikipedia-ingestion.js');
     const body = request.body as { years?: string };
 
     const result = await runWikipediaScraper(body.years);
