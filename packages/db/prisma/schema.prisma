@@ -106,6 +106,20 @@ model Alias {
   @@index([entityType])
 }
 
+model User {
+  id        String   @id @default(uuid())
+  googleId  String   @unique
+  email     String   @unique
+  name      String?
+  username  String   @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  games       Game[]
+  leaderboard Leaderboard[]
+}
+
 model Game {
   id            String     @id @default(uuid())
   startActorId  Int
@@ -117,6 +131,7 @@ model Game {
   region        String?
   playerName    String?
   playerId      String?
+  userId        String?
   movesCount    Int        @default(0)
   hintsUsed     Int        @default(0)
   undoCount     Int        @default(0)
@@ -128,11 +143,13 @@ model Game {
 
   startActor  Actor @relation("StartActor", fields: [startActorId], references: [id])
   targetActor Actor @relation("TargetActor", fields: [targetActorId], references: [id])
+  user        User? @relation(fields: [userId], references: [id])
 
   @@index([status])
   @@index([difficulty])
   @@index([mode])
   @@index([playerId])
+  @@index([userId])
 }
 
 model GameMove {
@@ -153,6 +170,7 @@ model Leaderboard {
   id            Int      @id @default(autoincrement())
   playerName    String
   playerId      String?
+  userId        String?
   gameId        String   @unique
   difficulty    String
   mode          String
@@ -165,10 +183,13 @@ model Leaderboard {
   pathLength    Int
   createdAt     DateTime @default(now())
 
+  user User? @relation(fields: [userId], references: [id])
+
   @@index([difficulty])
   @@index([mode])
   @@index([score])
   @@index([createdAt])
+  @@index([userId])
 }
 
 model DailyChallenge {
@@ -208,9 +229,11 @@ model Analytics {
   entityId      Int?
   searchTerm    String?
   playerId      String?
+  userId        String?
   metadata      String?  // JSON
   createdAt     DateTime @default(now())
 
   @@index([eventType])
   @@index([createdAt])
+  @@index([userId])
 }

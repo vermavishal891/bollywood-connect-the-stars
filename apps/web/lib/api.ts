@@ -5,6 +5,11 @@ export async function apiFetch(path: string, options?: RequestInit) {
   if (options?.body) {
     headers['Content-Type'] = 'application/json';
   }
+  // Add auth token if present in localStorage
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('bc_auth_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
   const res = await fetch(`${API_URL}${path}`, {
     headers,
     ...options,

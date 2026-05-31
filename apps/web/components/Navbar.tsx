@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Film, Trophy, Calendar, Settings, Home, Sparkles, HelpCircle } from 'lucide-react';
+import { Film, Trophy, Calendar, Settings, Home, Sparkles, HelpCircle, User, LogOut } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import GoogleLoginButton from './GoogleLoginButton';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const links = [
     { href: '/', label: 'Home', icon: <Home className="w-4 h-4" /> },
@@ -47,6 +50,37 @@ export default function Navbar() {
             <Sparkles className="w-4 h-4" />
             Play
           </Link>
+
+          {/* Auth section */}
+          <div className="ml-2 flex items-center">
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/settings"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-cinema-800 transition-all"
+                  title="Settings"
+                >
+                  {user.imageUrl ? (
+                    <img src={user.imageUrl} alt={user.username} className="w-6 h-6 rounded-full" />
+                  ) : (
+                    <User className="w-5 h-5" />
+                  )}
+                  <span className="hidden md:inline font-medium">{user.username}</span>
+                </Link>
+                <button
+                  onClick={logout}
+                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-cinema-800 rounded-lg transition-all"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="scale-90 origin-right">
+                <GoogleLoginButton />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

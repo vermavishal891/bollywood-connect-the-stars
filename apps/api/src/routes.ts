@@ -2,12 +2,16 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@bollywood-connect/db';
 import { calculateScore, normalizeText, Difficulty } from '@bollywood-connect/shared';
 import { buildGraph, findShortestPath, isValidMove, generatePair, getHint } from './game-engine';
+import { registerAuthRoutes, optionalAuthHook } from './auth';
 
 function normalize(value: string) {
   return normalizeText(value);
 }
 
 export async function registerRoutes(app: FastifyInstance) {
+  // Auth routes
+  await registerAuthRoutes(app);
+
   // Search actors and movies
   app.get('/search', async (request, reply) => {
     const { q } = request.query as { q?: string };
@@ -70,7 +74,7 @@ export async function registerRoutes(app: FastifyInstance) {
   });
 
   // Create a new game
-  app.post('/games', async (request) => {
+  app.post('/games', { onRequest: optionalAuthHook }, async (request) => {
     const body = request.body as {
       difficulty?: Difficulty;
       mode?: string;
@@ -90,6 +94,9 @@ export async function registerRoutes(app: FastifyInstance) {
       targetActorId = pair.targetActorId;
     }
 
+    const user = request.user;
+    const playerName = user?.username || body.playerName || 'Anonymous';
+
     const game = await prisma.game.create({
       data: {
         startActorId,
@@ -98,7 +105,8 @@ export async function registerRoutes(app: FastifyInstance) {
         mode: body.mode || 'classic',
         theme: body.theme,
         region: body.region,
-        playerName: body.playerName || 'Anonymous',
+        playerName,
+        userId: user?.id || null,
       },
       include: { startActor: true, targetActor: true },
     });
@@ -233,6 +241,7 @@ export async function registerRoutes(app: FastifyInstance) {
       await prisma.leaderboard.create({
         data: {
           playerName: game.playerName || 'Anonymous',
+          userId: game.userId,
           gameId,
           difficulty: game.difficulty,
           mode: game.mode,
