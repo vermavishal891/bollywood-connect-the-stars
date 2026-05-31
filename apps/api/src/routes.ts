@@ -349,7 +349,7 @@ export async function registerRoutes(app: FastifyInstance) {
 
     const challenge = await prisma.dailyChallenge.findUnique({
       where: { date: today },
-      include: { startActor: true, targetActor: true },
+      include: { startActor: true },
     });
 
     if (!challenge) {

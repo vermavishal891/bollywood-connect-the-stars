@@ -5,9 +5,14 @@ import { registerRoutes } from './routes';
 
 const app = fastify({ logger: true });
 
+// Parse CORS origins from env (comma-separated) or allow all in dev
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : true;
+
 async function start() {
   await app.register(cors, {
-    origin: true,
+    origin: corsOrigin,
     credentials: true,
   });
 

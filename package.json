@@ -18,6 +18,7 @@
     "db:studio": "npm run db:studio -w @bollywood-connect/db"
   },
   "devDependencies": {
+    "sqlite3": "^6.0.1",
     "typescript": "^5.4.0"
   }
 }
