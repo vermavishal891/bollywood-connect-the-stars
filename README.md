@@ -1,171 +1,305 @@
-# Bollywood Connect - Connect the Stars
+# 🎬 Bollywood Connect — *Connect the Stars*
 
-A daily and endless Bollywood trivia web game where players connect two Indian film stars through shared movies. Built with a dark cinematic theme inspired by Filmfare, IMDb, and Wordle.
+> *"Six Degrees of Separation, but make it Bollywood."*
 
-![Bollywood Connect](https://img.shields.io/badge/Bollywood-Connect-gold)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![Fastify](https://img.shields.io/badge/Fastify-4-black)
-![Prisma](https://img.shields.io/badge/Prisma-5-blue)
+[![Bollywood](https://img.shields.io/badge/%F0%9F%8E%AC-Bollywood-gold?style=for-the-badge)](https://github.com/vermavishal891/bollywood-connect-the-stars)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![Fastify](https://img.shields.io/badge/Fastify-4-000000?style=for-the-badge&logo=fastify)](https://fastify.dev)
+[![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?style=for-the-badge&logo=prisma)](https://prisma.io)
 
-## Features
+**Can you connect Shah Rukh Khan to Deepika Padukone in 3 movies?**
 
-### Core Game
-- **Connect the Stars**: Alternate between actors and movies to connect two Bollywood stars
-- **Autocomplete Search**: Smart search with aliases (SRK, Big B, DDLJ, K3G, etc.)
-- **Move Validation**: Real-time validation ensuring actors actually starred in selected movies
-- **Hints System**: Soft clues, first-letter hints, decade clues, and best-next-step hints
-- **Undo & Reset**: Go back or restart anytime
-- **Share Results**: Copy shareable text with your path and challenge friends
+Bollywood Connect is a daily trivia web game where players link two Indian film stars through shared movies — alternating between **actors** ⭐ and **movies** 🎬 until you bridge the gap. Think *Wordle* meets *Six Degrees of Kevin Bacon*, but with a Filmfare red-carpet aesthetic.
 
-### Game Modes
-- **Classic**: Connect two random Bollywood actors
-- **Daily Challenge**: Same puzzle for everyone each day
-- **Speedrun**: Fastest completion wins
-- **Shortest Path**: Fewest moves wins
-- **Party Mode**: One shared screen for groups
-- **Regional Mode**: Hindi, Tamil, Telugu, Marathi, Malayalam, Kannada, Bengali
-- **Movie-to-Movie**: Connect one film to another through actors
-- **Theme Mode**: 90s, villains, romance, YRF, Dharma, comedy, classics
+---
 
-### Difficulty Levels
-- **Easy**: Top 100 actors, 1-3 edges
-- **Medium**: Top 300 actors, 3-5 edges
-- **Hard**: Top 1000 actors, 5-7 edges
-- **Legend**: Large historical pool, 7+ edges
-
-### Admin Dashboard
-- View platform stats (actors, movies, games)
-- Browse and manage actor/movie database
-- Moderation queue for quality control
-
-### Design
-- Dark cinematic background with gold and red-carpet accents
-- Film reel and spotlight effects
-- Poster-card style for movies
-- Premium Filmfare + IMDb + Wordle vibe
-- Fully responsive for mobile and desktop
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 14 + TypeScript + Tailwind CSS |
-| Backend | Fastify (Node.js) |
-| Database | SQLite (dev) / PostgreSQL (prod) |
-| ORM | Prisma |
-| Animation | Framer Motion |
-| Icons | Lucide React |
-
-## Project Structure
-
-```
-bollywood-connect/
-├── apps/
-│   ├── web/              # Next.js frontend
-│   │   ├── app/          # App router pages
-│   │   ├── components/   # Shared components
-│   │   └── lib/          # API client utilities
-│   └── api/              # Fastify backend
-│       └── src/
-│           ├── main.ts       # Server entry
-│           ├── routes.ts     # API endpoints
-│           └── game-engine.ts # BFS, validation, hints
-├── packages/
-│   ├── db/               # Prisma schema & seed
-│   └── shared/           # Shared TypeScript types
-└── package.json          # Root workspace config
-```
-
-## Getting Started
+## 🚀 Quick Start — *Play in 60 Seconds*
 
 ### Prerequisites
-- Node.js 18+
-- pnpm (or npm/yarn)
+- [Node.js 18+](https://nodejs.org)
+- A [TMDB API key](https://www.themoviedb.org/settings/api) (free)
 
-### Installation
-
+### 1. Clone & Install
 ```bash
-# Install dependencies
-pnpm install
-
-# Generate Prisma client
-pnpm db:generate
-
-# Push database schema
-pnpm db:push
-
-# Seed database with Bollywood data
-pnpm db:seed
+git clone https://github.com/vermavishal891/bollywood-connect-the-stars.git
+cd bollywood-connect-the-stars
+npm install
 ```
 
-### Development
-
-Run both frontend and backend concurrently:
-
+### 2. Set Up Environment
 ```bash
-# Start backend (port 4000)
-cd apps/api
-pnpm dev
-
-# Start frontend (port 3000)
-cd apps/web
-pnpm dev
+# Copy the example env file
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env and add your TMDB_API_KEY
 ```
 
-Or use Turbo:
-```bash
-pnpm dev
-```
-
-### Environment Variables
-
-Create `.env` files as needed:
-
-**apps/api/.env**
-```
-DATABASE_URL="file:../../packages/db/dev.db"
+Your `apps/api/.env` should look like:
+```env
+TMDB_API_KEY=your_tmdb_api_key_here
 PORT=4000
 ```
 
-**apps/web/.env.local**
-```
-NEXT_PUBLIC_API_URL=http://localhost:4000
+### 3. Database Setup
+```bash
+cd packages/db
+npx prisma generate
+npx prisma db push
 ```
 
-## API Endpoints
+### 4. Ingest Data *(one-time)*
+```bash
+# Start the API server first
+cd apps/api
+npm run dev
+
+# In another terminal — ingest all Hindi movies from TMDB
+curl -X POST http://localhost:4000/admin/tmdb/full-ingest
+# This takes ~1–2 hours. Check progress at:
+# http://localhost:3000/admin/ingestion
+```
+
+### 5. Run the Game
+```bash
+# Terminal 1 — API (port 4000)
+npm run dev -w apps/api
+
+# Terminal 2 — Frontend (port 3000)
+npm run dev -w apps/web
+```
+
+Open **http://localhost:3000** and start connecting stars! 🌟
+
+---
+
+## 🎮 How to Play
+
+```
+Salman Khan ──► Hum Aapke Hain Koun..! ──► Madhuri Dixit ──► Dedh Ishqiya ──► Naseeruddin Shah
+     Actor              Movie                  Actor              Movie                Actor
+```
+
+1. **Start** with a Bollywood actor (e.g., Salman Khan)
+2. **Pick a movie** they've starred in
+3. **Pick another actor** from that movie
+4. **Repeat** until you reach the target actor
+5. **Win!** Score = speed × accuracy × difficulty bonus
+
+### Difficulty Levels
+
+| Level | Start/Target Pool | Path Length | Example Pair |
+|-------|------------------|-------------|--------------|
+| 🟢 **Easy** | Megastars (SRK, Salman, Deepika) | 1–3 hops | Akshay Kumar → Hrithik Roshan |
+| 🟡 **Medium** | Recognizable faces | 2–5 hops | Riteish Deshmukh → Nimrat Kaur |
+| 🔴 **Hard** | Character actors | 3–7 hops | Sumeet Vyas → Kumkum |
+| 🔥 **Legend** | Anyone goes | 5–12 hops | The ultimate test |
+
+### Game Modes
+
+- 🎲 **Classic** — Random pair, your pace
+- 📅 **Daily Challenge** — Same puzzle for everyone, refreshed every 24h
+- ⚡ **Speedrun** — Fastest time wins
+- 🎯 **Shortest Path** — Fewest moves wins
+- 🎉 **Party Mode** — One screen, multiple players
+- 🌍 **Regional** — Tamil, Telugu, Marathi, Malayalam, Kannada, Bengali
+- 🎬 **Movie-to-Movie** — Connect films instead of actors
+- 🎭 **Theme Mode** — 90s, villains, romance, YRF, Dharma, comedy, classics
+
+### Power-Ups
+
+| Hint | What It Does |
+|------|-------------|
+| 💡 **Soft** | Genre + decade clue |
+| 🔤 **First Letter** | Reveals the first letter |
+| 📅 **Decade** | Tells you what era the connection is from |
+| 🧭 **Best Next** | Reveals the optimal next step |
+
+---
+
+## 🏗️ Architecture Deep Dive
+
+### The Graph
+
+At its core, Bollywood Connect is a **bipartite graph**:
+
+```
+        ┌─────────┐         ┌─────────┐         ┌─────────┐
+   SRK ─┤  Dilwale ├── Kajol ┤  K3G    ├─── Amitabh ┤  Sholay  ├── Dharmendra
+        └─────────┘         └─────────┘         └─────────┘
+```
+
+- **~8,200 actor nodes** — filtered to `knownForDepartment === 'Acting'`
+- **~1,700 movie nodes** — Hindi films from TMDB
+- **~24,600 edges** — cast relationships via `MovieCast` junction table
+
+The graph lives in **SQLite** (dev) and is traversed with **Breadth-First Search** (BFS) for shortest-path finding, move validation, and hint generation.
+
+### Data Pipeline
+
+```
+TMDB API ──► discoverAllHindiMovies() ──► fetchMovieDetailsAndCredits()
+     │                                          │
+     │                                    Collects unique actor IDs
+     │                                          │
+     └────────────────────────────────────► fetchActorDetails()
+                                                  │
+                                           upsertAllData()
+                                                  │
+                                           SQLite (Prisma)
+```
+
+**TMDB Ingestion Engine** (`apps/api/src/tmdb-ingestion.ts`):
+- Discovers **all** Hindi movies page-by-page from TMDB
+- Fetches full metadata + credits for each film
+- Collects unique actor IDs, then fetches actor profiles
+- Header-aware rate limiting (reads `x-ratelimit-remaining`)
+- **Checkpoint resume** — if it crashes, it picks up where it left off
+- `tmdb_checkpoint.json` tracks progress across phases
+
+### Game Engine (`apps/api/src/game-engine.ts`)
+
+```ts
+buildGraph()        → adjacency lists from DB
+findShortestPath()  → BFS between two actors
+generatePair()      → random valid pair by difficulty
+getHint()           → shortest-path hint from current position
+isValidMove()       → checks cast link in graph
+```
+
+**Difficulty filtering:**
+- Easy pool: `popularityScore >= 2` + `>= 5 movies` + `knownForDepartment === 'Acting'`
+- Medium pool: `0.5 <= popularityScore < 2` + `>= 3 movies` + acting only
+- Hard pool: `popularityScore < 0.5` + acting only
+
+**Popularity scores come from TMDB** (0–10 scale for Indian actors). SRK ≈ 3.4, Akshay ≈ 4.6.
+
+### Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| 🎨 **Frontend** | Next.js 14 + TypeScript + Tailwind CSS | App Router, server components, cinematic dark theme |
+| ⚡ **Backend** | Fastify (Node.js) | Fast, low overhead, great plugin system |
+| 🗄️ **Database** | SQLite (dev) / PostgreSQL (prod) | Prisma ORM, zero-config local dev |
+| 🔗 **ORM** | Prisma 5 | Type-safe queries, migrations, schema management |
+| 🎭 **Animations** | Framer Motion | Smooth transitions, AnimatePresence for move list |
+| 🔍 **Icons** | Lucide React | Clean, consistent iconography |
+| 🍞 **Toasts** | react-hot-toast | Non-blocking user feedback |
+
+### Project Structure
+
+```
+bollywood-connect-the-stars/
+├── apps/
+│   ├── web/                    # 🎨 Next.js 14 frontend
+│   │   ├── app/
+│   │   │   ├── play/           # Game screen (the main event)
+│   │   │   ├── leaderboard/    # Hall of fame
+│   │   │   ├── daily/          # Daily challenge
+│   │   │   ├── admin/          # Ingestion dashboard
+│   │   │   └── ...
+│   │   ├── components/Navbar.tsx
+│   │   └── lib/api.ts          # API client (fetch wrapper)
+│   └── api/                    # ⚡ Fastify backend
+│       ├── src/
+│       │   ├── main.ts         # Server bootstrap
+│       │   ├── routes.ts       # All REST endpoints
+│       │   ├── game-engine.ts  # BFS, scoring, hints
+│       │   ├── tmdb-ingestion.ts  # Full TMDB pipeline
+│       │   ├── tmdb.ts         # TMDB API client
+│       │   └── wikipedia-ingestion.ts  # Free fallback data
+│       └── .env                # TMDB_API_KEY
+├── packages/
+│   ├── db/                     # 🗄️ Prisma schema + seed
+│   │   ├── prisma/schema.prisma
+│   │   └── src/seed.ts
+│   └── shared/                 # 🔗 Shared types & utils
+│       └── src/index.ts
+├── .env.example
+├── package.json                # npm workspaces
+└── turbo.json                  # Turborepo config
+```
+
+---
+
+## 🛠️ Development Guide
+
+### Common Commands
+
+```bash
+# Install all dependencies
+npm install
+
+# Generate Prisma client
+npx prisma generate --schema packages/db/prisma/schema.prisma
+
+# Reset database
+npx prisma db push --force-reset --schema packages/db/prisma/schema.prisma
+
+# Seed with basic data
+npm run seed -w packages/db
+
+# Run API dev server
+npm run dev -w apps/api
+
+# Run frontend dev server
+npm run dev -w apps/web
+
+# Run both (if configured with Turbo)
+npm run dev
+```
+
+### Environment Files
+
+**`apps/api/.env`**
+```env
+TMDB_API_KEY=your_key_here
+PORT=4000
+```
+
+**`packages/db/.env`** *(already configured)*
+```env
+DATABASE_URL="file:./dev.db"
+```
+
+> ⚠️ **Do NOT** add `DATABASE_URL` to `apps/api/.env` — it causes SQLite path resolution issues on Windows.
+
+### API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/search?q=srk` | Search actors and movies |
-| POST | `/games` | Create new game |
-| GET | `/games/:id` | Get game state |
-| POST | `/games/:id/move` | Make a move |
-| POST | `/games/:id/undo` | Undo last move |
-| POST | `/games/:id/reset` | Reset game |
-| POST | `/games/:id/hint` | Get hint |
-| GET | `/leaderboard` | Get leaderboard |
-| GET | `/daily` | Get daily challenge |
-| GET | `/admin/stats` | Admin statistics |
+| `GET` | `/search?q=srk` | Search actors & movies with aliases |
+| `POST` | `/games` | Create a new game |
+| `GET` | `/games/:id` | Get full game state |
+| `POST` | `/games/:id/move` | Submit a move |
+| `POST` | `/games/:id/undo` | Undo last move |
+| `POST` | `/games/:id/reset` | Reset to start |
+| `POST` | `/games/:id/hint` | Get a hint |
+| `GET` | `/leaderboard` | Top scores |
+| `GET` | `/daily` | Today's challenge |
+| `POST` | `/admin/tmdb/full-ingest` | Start full TMDB ingestion |
+| `GET` | `/admin/tmdb/progress` | Check ingestion status |
 
-## Game Logic
+### Adding New Data
 
-The game graph is bipartite: actors connect to movies, and movies connect to actors.
+1. **Via Admin UI**: Go to `http://localhost:3000/admin/ingestion`
+2. **Via API**: `POST /admin/tmdb/full-ingest`
+3. **Manual**: Edit `packages/db/prisma/schema.prisma` → run `npx prisma db push`
 
-```
-Actor <-> Movie <-> Actor <-> Movie <-> Actor
-```
+---
 
-- **Shortest Path**: BFS algorithm finds optimal route
-- **Move Validation**: Checks if actor actually starred in selected movie
-- **Scoring**: Based on shortest path length, actual moves, time taken, hints used, and difficulty multiplier
+## 🎨 Design System
 
-## Data
+- **Primary**: Gold (`#d4af37`) — Filmfare trophy energy
+- **Accent**: Red-carpet red (`#e50914`)
+- **Background**: Deep cinematic black (`#0a0a0f`)
+- **Typography**: Clean sans-serif with gold gradients for headings
+- **Cards**: Frosted glass with subtle borders
+- **Avatars**: Rounded full with fallback initials
+- **Posters**: Rounded-lg with film icon fallback
 
-The seed dataset includes:
-- **145+ Bollywood actors** with aliases and popularity scores
-- **90+ Bollywood movies** with cast relationships
-- Coverage from 1975 to 2024
+---
 
-## License
+## 📜 License
 
-MIT License - Built for Bollywood cinema fans worldwide.
+MIT — Built for Bollywood fans worldwide. 🎥🍿
+
+> *"Picture abhi baaki hai, mere dost."* 🎬
