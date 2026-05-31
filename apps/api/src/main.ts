@@ -16,6 +16,17 @@ async function start() {
     credentials: true,
   });
 
+  // Log full stack traces for 500 errors
+  app.setErrorHandler((error, request, reply) => {
+    app.log.error({ err: error, url: request.url, method: request.method }, 'Unhandled error');
+    reply.status(500).send({
+      statusCode: 500,
+      error: 'Internal Server Error',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
+    });
+  });
+
   await registerRoutes(app);
 
   const port = parseInt(process.env.PORT || '4000');
