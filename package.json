@@ -1,0 +1,23 @@
+{
+  "name": "bollywood-connect",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev:api": "npm run dev -w @bollywood-connect/api",
+    "dev:web": "npm run dev -w @bollywood-connect/web",
+    "start:api": "npm run start -w @bollywood-connect/api",
+    "start:web": "npm run start -w @bollywood-connect/web",
+    "db:generate": "npm run db:generate -w @bollywood-connect/db",
+    "db:push": "npm run db:push -w @bollywood-connect/db",
+    "db:seed": "npm run db:seed -w @bollywood-connect/db",
+    "db:studio": "npm run db:studio -w @bollywood-connect/db"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

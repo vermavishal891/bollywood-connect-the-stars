@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Actor {
+  id              Int        @id @default(autoincrement())
+  tmdbId          Int?       @unique
+  imdbId          String?
+  name            String
+  normalizedName  String
+  gender          String?
+  profileImageUrl String?
+  description     String?
+  trivia          String?
+  birthday        DateTime?
+  deathday        DateTime?
+  placeOfBirth    String?
+  knownForDepartment String?
+  homepage        String?
+  popularityScore Float      @default(0)
+  isBollywood     Boolean    @default(false)
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  movies          MovieCast[]
+  aliases         Alias[]
+  gamesAsStart    Game[]     @relation("StartActor")
+  gamesAsTarget   Game[]     @relation("TargetActor")
+  dailyChallenges DailyChallenge[]
+
+  @@index([normalizedName])
+  @@index([popularityScore])
+  @@index([isBollywood])
+  @@index([birthday])
+}
+
+model Movie {
+  id              Int        @id @default(autoincrement())
+  tmdbId          Int?       @unique
+  imdbId          String?
+  title           String
+  normalizedTitle String
+  releaseYear     Int?
+  originalLanguage String?
+  posterUrl       String?
+  backdropUrl     String?
+  description     String?
+  trivia          String?
+  runtime         Int?
+  tagline         String?
+  status          String?
+  voteAverage     Float?
+  voteCount       Int?
+  budget          Int?
+  revenue         Int?
+  originalTitle   String?
+  releaseDate     DateTime?
+  popularityScore Float      @default(0)
+  isHindi         Boolean    @default(false)
+  isBollywood     Boolean    @default(false)
+  isDocumentary   Boolean    @default(false)
+  region          String?    // hindi, tamil, telugu, marathi, malayalam, kannada, bengali
+  genre           String?
+  createdAt       DateTime   @default(now())
+  actors          MovieCast[]
+  aliases         Alias[]
+
+  @@index([normalizedTitle])
+  @@index([releaseYear])
+  @@index([isBollywood])
+  @@index([region])
+  @@index([voteAverage])
+  @@index([releaseDate])
+}
+
+model MovieCast {
+  movieId       Int
+  actorId       Int
+  characterName String?
+  billingOrder  Int?
+
+  movie Movie @relation(fields: [movieId], references: [id])
+  actor Actor @relation(fields: [actorId], references: [id])
+
+  @@id([movieId, actorId])
+  @@index([actorId])
+  @@index([movieId])
+}
+
+model Alias {
+  id              Int    @id @default(autoincrement())
+  entityType      String // 'actor' or 'movie'
+  actorId         Int?
+  movieId         Int?
+  alias           String
+  normalizedAlias String
+
+  actor Actor? @relation(fields: [actorId], references: [id])
+  movie Movie? @relation(fields: [movieId], references: [id])
+
+  @@index([normalizedAlias])
+  @@index([entityType])
+}
+
+model Game {
+  id            String     @id @default(uuid())
+  startActorId  Int
+  targetActorId Int
+  difficulty    String     @default("medium") // easy, medium, hard, legend
+  mode          String     @default("classic") // classic, daily, speedrun, shortest, party, regional, movie-to-movie, theme
+  status        String     @default("active") // active, completed, abandoned
+  theme         String?
+  region        String?
+  playerName    String?
+  playerId      String?
+  movesCount    Int        @default(0)
+  hintsUsed     Int        @default(0)
+  undoCount     Int        @default(0)
+  timeTaken     Int?       // in seconds
+  score         Int        @default(0)
+  createdAt     DateTime   @default(now())
+  completedAt   DateTime?
+  moves         GameMove[]
+
+  startActor  Actor @relation("StartActor", fields: [startActorId], references: [id])
+  targetActor Actor @relation("TargetActor", fields: [targetActorId], references: [id])
+
+  @@index([status])
+  @@index([difficulty])
+  @@index([mode])
+  @@index([playerId])
+}
+
+model GameMove {
+  id          Int      @id @default(autoincrement())
+  gameId      String
+  moveNumber  Int
+  entityType  String   // 'actor' or 'movie'
+  entityId    Int
+  entityName  String
+  createdAt   DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+}
+
+model Leaderboard {
+  id            Int      @id @default(autoincrement())
+  playerName    String
+  playerId      String?
+  gameId        String   @unique
+  difficulty    String
+  mode          String
+  movesCount    Int
+  timeTaken     Int
+  hintsUsed     Int
+  score         Int
+  startActor    String
+  targetActor   String
+  pathLength    Int
+  createdAt     DateTime @default(now())
+
+  @@index([difficulty])
+  @@index([mode])
+  @@index([score])
+  @@index([createdAt])
+}
+
+model DailyChallenge {
+  id            Int      @id @default(autoincrement())
+  date          DateTime @unique
+  startActorId  Int
+  targetActorId Int
+  difficulty    String
+  theme         String?
+  description   String?
+  createdAt     DateTime @default(now())
+
+  startActor  Actor @relation(fields: [startActorId], references: [id])
+
+  @@index([date])
+}
+
+model ModerationQueue {
+  id          Int      @id @default(autoincrement())
+  entityType  String   // 'actor' or 'movie'
+  entityId    Int?
+  entityName  String?
+  issueType   String
+  status      String   @default("pending") // pending, approved, rejected
+  notes       String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([status])
+  @@index([entityType])
+}
+
+model Analytics {
+  id            Int      @id @default(autoincrement())
+  eventType     String
+  entityType    String?
+  entityId      Int?
+  searchTerm    String?
+  playerId      String?
+  metadata      String?  // JSON
+  createdAt     DateTime @default(now())
+
+  @@index([eventType])
+  @@index([createdAt])
+}
