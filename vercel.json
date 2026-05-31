@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm install && npm run db:generate -w @bollywood-connect/db && npm run build --workspaces",
+  "buildCommand": "npm run build -w @bollywood-connect/shared && npm run build -w @bollywood-connect/web",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "installCommand": "npm install",
