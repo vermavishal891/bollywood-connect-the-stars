@@ -8,7 +8,7 @@ services:
     runtime: node
     plan: free
     rootDir: .
-    buildCommand: npm install && npm run db:generate -w @bollywood-connect/db && npm run build --workspaces
+    buildCommand: npm ci && npm run db:generate -w @bollywood-connect/db && npm run build --workspaces
     startCommand: npm run start -w @bollywood-connect/api
     envVars:
       - key: DATABASE_URL
