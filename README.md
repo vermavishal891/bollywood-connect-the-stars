@@ -13,6 +13,13 @@ Bollywood Connect is a daily trivia web game where players link two Indian film 
 
 ---
 
+## 🌐 Live Demo
+
+- **Frontend:** [https://bollywood-connect-the-stars-web.vercel.app](https://bollywood-connect-the-stars-web.vercel.app)
+- **API:** [https://bollywood-connect-api.onrender.com](https://bollywood-connect-api.onrender.com)
+
+---
+
 ## 🚀 Quick Start — *Play in 60 Seconds*
 
 ### Prerequisites
