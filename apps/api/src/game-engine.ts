@@ -1,8 +1,8 @@
 import { prisma } from '@bollywood-connect/db';
 import { Difficulty } from '@bollywood-connect/shared';
 
-const MIN_HIGH_POP_MOVIES = 10;
-const MIN_MOVIE_POPULARITY = 35;
+const MIN_HIGH_POP_MOVIES = 5;
+const MIN_MOVIE_POPULARITY = 3;
 
 export interface GraphNode {
   type: 'actor' | 'movie';
