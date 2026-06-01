@@ -51,6 +51,46 @@
            placeholder-gray-400 focus:outline-none focus:border-cinema-gold focus:ring-1 focus:ring-cinema-gold/50
            transition-all;
   }
+
+  .hero-avatar {
+    @apply rounded-full object-cover border-4 border-cinema-gold shadow-2xl;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3), 0 0 80px rgba(212, 175, 55, 0.1);
+  }
+
+  .move-avatar {
+    @apply rounded-full object-cover border-3 border-cinema-gold/80 shadow-lg;
+  }
+
+  .move-poster {
+    @apply rounded-xl object-cover border-2 border-cinema-red-light/60 shadow-lg;
+  }
+
+  .timeline-connector {
+    @apply w-1 bg-gradient-to-b from-cinema-gold via-cinema-red-light to-cinema-gold rounded-full;
+  }
+
+  .game-card {
+    @apply bg-cinema-800/90 backdrop-blur-md border border-cinema-600/40 rounded-2xl shadow-2xl;
+  }
+
+  .win-burst {
+    animation: winBurst 0.8s ease-out forwards;
+  }
+
+  @keyframes winBurst {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+    50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.5); }
+  }
+
+  .pulse-gold {
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
 }
 
 /* Custom scrollbar */
