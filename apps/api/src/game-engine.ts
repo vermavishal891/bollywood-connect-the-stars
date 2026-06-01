@@ -113,34 +113,23 @@ export function isValidMove(
 }
 
 export async function getQualifiedActorPool() {
-  const actors = await prisma.actor.findMany({
-    where: {
-      isBollywood: true,
-      isActive: true,
-      knownForDepartment: 'Acting',
-    },
-    select: {
-      id: true,
-      popularityScore: true,
-      knownForDepartment: true,
-      movies: {
-        where: {
-          movie: {
-            popularityScore: { gt: MIN_MOVIE_POPULARITY },
-          },
-        },
-        select: { movieId: true },
-      },
-    },
-  });
+  // Count high-popularity external credits per actor using raw query for performance
+  const results = await prisma.$queryRaw<
+    Array<{ actorId: number; popularityScore: number; knownForDepartment: string; creditCount: bigint }>
+  >`
+    SELECT a.id as "actorId", a."popularityScore", a."knownForDepartment", COUNT(amc.id) as "creditCount"
+    FROM "Actor" a
+    LEFT JOIN "ActorMovieCredit" amc ON amc."actorId" = a.id AND amc.popularity > ${MIN_MOVIE_POPULARITY}
+    WHERE a."isBollywood" = true AND a."isActive" = true AND a."knownForDepartment" = 'Acting'
+    GROUP BY a.id
+    HAVING COUNT(amc.id) >= ${MIN_HIGH_POP_MOVIES}
+  `;
 
-  return actors
-    .filter((a) => a.movies.length >= MIN_HIGH_POP_MOVIES)
-    .map((a) => ({
-      id: a.id,
-      popularityScore: a.popularityScore,
-      knownForDepartment: a.knownForDepartment,
-    }));
+  return results.map((r) => ({
+    id: r.actorId,
+    popularityScore: r.popularityScore,
+    knownForDepartment: r.knownForDepartment,
+  }));
 }
 
 export async function isQualifiedStartActor(actorId: number): Promise<boolean> {
@@ -150,14 +139,6 @@ export async function isQualifiedStartActor(actorId: number): Promise<boolean> {
       knownForDepartment: true,
       isBollywood: true,
       isActive: true,
-      movies: {
-        where: {
-          movie: {
-            popularityScore: { gt: MIN_MOVIE_POPULARITY },
-          },
-        },
-        select: { movieId: true },
-      },
     },
   });
 
@@ -165,7 +146,14 @@ export async function isQualifiedStartActor(actorId: number): Promise<boolean> {
     return false;
   }
 
-  return actor.movies.length >= MIN_HIGH_POP_MOVIES;
+  const count = await prisma.actorMovieCredit.count({
+    where: {
+      actorId,
+      popularity: { gt: MIN_MOVIE_POPULARITY },
+    },
+  });
+
+  return count >= MIN_HIGH_POP_MOVIES;
 }
 
 export async function generatePair(difficulty: Difficulty) {

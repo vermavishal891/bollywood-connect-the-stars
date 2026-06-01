@@ -30,12 +30,28 @@ model Actor {
   aliases         Alias[]
   gamesAsStart    Game[]     @relation("StartActor")
   gamesAsTarget   Game[]     @relation("TargetActor")
-  dailyChallenges DailyChallenge[]
+  dailyChallenges    DailyChallenge[]
+  externalCredits    ActorMovieCredit[]
 
   @@index([normalizedName])
   @@index([popularityScore])
   @@index([isBollywood])
   @@index([birthday])
+}
+
+model ActorMovieCredit {
+  id          Int      @id @default(autoincrement())
+  actorId     Int
+  tmdbMovieId Int
+  title       String
+  popularity  Float
+  character   String?
+  releaseDate String?
+
+  actor Actor @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([popularity])
 }
 
 model Movie {
