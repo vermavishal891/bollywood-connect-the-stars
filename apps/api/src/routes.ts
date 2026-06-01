@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@bollywood-connect/db';
 import { calculateScore, normalizeText, Difficulty } from '@bollywood-connect/shared';
-import { buildGraph, findShortestPath, isValidMove, generatePair, getHint } from './game-engine';
+import { buildGraph, findShortestPath, isValidMove, generatePair, getHint, isQualifiedStartActor } from './game-engine';
 import { registerAuthRoutes, optionalAuthHook } from './auth';
 
 function normalize(value: string) {
@@ -74,7 +74,7 @@ export async function registerRoutes(app: FastifyInstance) {
   });
 
   // Create a new game
-  app.post('/games', { onRequest: optionalAuthHook }, async (request) => {
+  app.post('/games', { onRequest: optionalAuthHook }, async (request, reply) => {
     const body = request.body as {
       difficulty?: Difficulty;
       mode?: string;
@@ -92,6 +92,14 @@ export async function registerRoutes(app: FastifyInstance) {
       const pair = await generatePair(body.difficulty || 'medium');
       startActorId = pair.startActorId;
       targetActorId = pair.targetActorId;
+    } else {
+      const [startValid, targetValid] = await Promise.all([
+        isQualifiedStartActor(startActorId),
+        isQualifiedStartActor(targetActorId),
+      ]);
+      if (!startValid || !targetValid) {
+        return reply.status(400).send({ error: 'Actor does not meet the minimum high-popularity movie requirement' });
+      }
     }
 
     const user = request.user;

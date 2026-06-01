@@ -11,6 +11,7 @@ import {
   getMovieDetails,
   getMovieCredits,
   getPersonDetails,
+  getPersonMovieCredits,
   getImageUrl,
   TMDBMovie,
   TMDBError,
@@ -601,7 +602,40 @@ export async function upsertToDatabase(
     }
   }
 
-  onProgress?.('Ingestion complete!');
+  // ── Fetch & Store Actor Movie Credits ──
+  onProgress?.('Fetching actor movie credits from TMDB...');
+  let creditsStored = 0;
+  const actorEntries = Array.from(actorTmdbToDbId.entries());
+  for (let i = 0; i < actorEntries.length; i++) {
+    const [tmdbId, dbId] = actorEntries[i];
+    try {
+      // Clear existing credits first to avoid duplicates on re-runs
+      await prisma.actorMovieCredit.deleteMany({ where: { actorId: dbId } });
+
+      const credits = await rateLimitedFetch(() => getPersonMovieCredits(tmdbId));
+      const creditData = credits.cast.map((c) => ({
+        actorId: dbId,
+        tmdbMovieId: c.id,
+        title: c.title,
+        popularity: c.popularity,
+        character: c.character || null,
+        releaseDate: c.release_date || null,
+      }));
+
+      if (creditData.length > 0) {
+        await prisma.actorMovieCredit.createMany({ data: creditData });
+        creditsStored += creditData.length;
+      }
+
+      if (i % 50 === 0) {
+        onProgress?.(`Actor credits: ${i + 1}/${actorEntries.length}`);
+      }
+    } catch (err: any) {
+      errors.push(`Actor credits ${tmdbId}: ${err.message}`);
+    }
+  }
+
+  onProgress?.(`Ingestion complete! ${creditsStored} actor credits stored.`);
   return { actorsCreated, moviesCreated, castLinksCreated, aliasesCreated, errors };
 }
 

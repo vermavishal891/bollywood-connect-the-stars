@@ -1,6 +1,9 @@
 import { prisma } from '@bollywood-connect/db';
 import { Difficulty } from '@bollywood-connect/shared';
 
+const MIN_HIGH_POP_MOVIES = 5;
+const MIN_MOVIE_POPULARITY = 3;
+
 export interface GraphNode {
   type: 'actor' | 'movie';
   id: number;
@@ -109,35 +112,78 @@ export function isValidMove(
   return false;
 }
 
+export async function getQualifiedActorPool() {
+  // Count high-popularity external credits per actor using raw query for performance
+  const results = await prisma.$queryRaw<
+    Array<{ actorId: number; popularityScore: number; knownForDepartment: string; creditCount: bigint }>
+  >`
+    SELECT a.id as "actorId", a."popularityScore", a."knownForDepartment", COUNT(amc.id) as "creditCount"
+    FROM "Actor" a
+    LEFT JOIN "ActorMovieCredit" amc ON amc."actorId" = a.id AND amc.popularity > ${MIN_MOVIE_POPULARITY}
+    WHERE a."isBollywood" = true AND a."isActive" = true AND a."knownForDepartment" = 'Acting'
+    GROUP BY a.id
+    HAVING COUNT(amc.id) >= ${MIN_HIGH_POP_MOVIES}
+  `;
+
+  return results.map((r) => ({
+    id: r.actorId,
+    popularityScore: r.popularityScore,
+    knownForDepartment: r.knownForDepartment,
+  }));
+}
+
+export async function isQualifiedStartActor(actorId: number): Promise<boolean> {
+  const actor = await prisma.actor.findUnique({
+    where: { id: actorId },
+    select: {
+      knownForDepartment: true,
+      isBollywood: true,
+      isActive: true,
+    },
+  });
+
+  if (!actor || !actor.isBollywood || !actor.isActive || actor.knownForDepartment !== 'Acting') {
+    return false;
+  }
+
+  const count = await prisma.actorMovieCredit.count({
+    where: {
+      actorId,
+      popularity: { gt: MIN_MOVIE_POPULARITY },
+    },
+  });
+
+  return count >= MIN_HIGH_POP_MOVIES;
+}
+
 export async function generatePair(difficulty: Difficulty) {
-  const { actors, actorToMovies, movieToActors } = await buildGraph();
+  const { actorToMovies, movieToActors } = await buildGraph();
+  const actors = await getQualifiedActorPool();
 
   // Build non-overlapping pools by popularity score + minimum movie count.
-  // TMDB popularity scores are typically 0-10 for Indian actors.
-  // Distribution: >=2 (~top 30), 0.5-2 (~450), <0.5 (~7600).
-  // Require min movies to filter out foreign cameo actors (e.g. Stallone, Will Smith).
-  // Only actual actors (knownForDepartment === 'Acting') can be start/end points.
+  // Hard gate: only actors with knownForDepartment === 'Acting' AND at least
+  // MIN_HIGH_POP_MOVIES movies with popularityScore > MIN_MOVIE_POPULARITY
+  // can be start/end points. Difficulty tiers refine the pool further.
   const movieCount = (a: any) => actorToMovies.get(a.id)?.length || 0;
-  const isActor = (a: any) => a.knownForDepartment === 'Acting';
   let pool: typeof actors = [];
 
   if (difficulty === 'easy') {
-    pool = actors.filter((a: any) => a.popularityScore >= 2 && movieCount(a) >= 5 && isActor(a));
+    pool = actors.filter((a: any) => a.popularityScore >= 2 && movieCount(a) >= 5);
   } else if (difficulty === 'medium') {
-    pool = actors.filter((a: any) => a.popularityScore >= 0.5 && a.popularityScore < 2 && movieCount(a) >= 3 && isActor(a));
+    pool = actors.filter((a: any) => a.popularityScore >= 0.5 && a.popularityScore < 2 && movieCount(a) >= 3);
   } else if (difficulty === 'hard') {
-    pool = actors.filter((a: any) => a.popularityScore < 0.5 && isActor(a));
+    pool = actors.filter((a: any) => a.popularityScore < 0.5);
   } else {
-    // legend — any actor, but force longer paths
-    pool = actors.filter((a: any) => isActor(a));
+    // legend — any qualified actor, but force longer paths
+    pool = actors;
   }
 
-  // Fallback: if pool is too small, relax constraints
+  // Fallback: if pool is too small, relax constraints but stay within qualified actors
   if (pool.length < 10) {
-    pool = actors.filter((a: any) => a.popularityScore >= 1 && movieCount(a) >= 3 && isActor(a));
+    pool = actors.filter((a: any) => a.popularityScore >= 1 && movieCount(a) >= 3);
   }
   if (pool.length < 2) {
-    throw new Error('Not enough actors in database to generate a game pair');
+    throw new Error('Not enough qualified actors in database to generate a game pair');
   }
 
   const minEdges = { easy: 1, medium: 2, hard: 3, legend: 5 }[difficulty];
