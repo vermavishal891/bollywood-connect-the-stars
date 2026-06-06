@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Film, Lightbulb, RotateCcw, Share2, Star, Trophy, Undo2 } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function HowToPlayPage() {
   const steps = [
@@ -55,6 +56,7 @@ export default function HowToPlayPage() {
         </Link>
 
         <div className="mb-10">
+          <BrandLogo variant="gold" className="mb-4 justify-start" imageClassName="h-24 w-24 object-contain" />
           <p className="section-title">Rules</p>
           <h1 className="mt-2 text-4xl font-bold text-white md:text-5xl">How to Play</h1>
           <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-400">

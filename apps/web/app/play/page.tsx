@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { createGame, getGame, getHint, makeMove, resetGame, search, undoMove } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 interface GameMove {
   id: number;
@@ -160,10 +161,10 @@ function MoviePoster({ url, title, size = 96 }: { url?: string | null; title: st
 
   return (
     <div
-      className="move-poster flex shrink-0 items-center justify-center bg-gradient-to-br from-cinema-700 to-cinema-900 text-cinema-red-light"
+      className="move-poster flex shrink-0 items-center justify-center bg-gradient-to-br from-cinema-700 to-cinema-900"
       style={{ width, height: size }}
     >
-      <Film className="h-7 w-7 opacity-70" />
+      <img src="/brand/03_app_icons/neon_glamour_primary_icon_64x64.png" alt="" className="h-9 w-9 object-contain opacity-80" />
     </div>
   );
 }
@@ -585,6 +586,7 @@ function PlayPageContent() {
       <div className="flex min-h-screen items-center justify-center px-4">
         {loadError ? (
           <div className="game-card max-w-md p-6 text-center">
+            <BrandLogo variant="gold" className="mx-auto mb-4" imageClassName="h-20 w-20 object-contain" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-red-light/40 bg-cinema-red/20 text-cinema-red-light">
               <X className="h-6 w-6" />
             </div>
@@ -605,9 +607,10 @@ function PlayPageContent() {
           <motion.div
             animate={{ opacity: [0.45, 1, 0.45] }}
             transition={{ duration: 1.2, repeat: Infinity }}
-            className="game-card px-6 py-5 text-lg font-bold text-cinema-gold"
+            className="game-card flex flex-col items-center gap-3 px-6 py-5 text-lg font-bold text-cinema-gold"
           >
-            Loading game...
+            <BrandLogo variant="gold" imageClassName="h-20 w-20 object-contain" />
+            <span>Loading game...</span>
           </motion.div>
         )}
       </div>
@@ -629,7 +632,7 @@ function PlayPageContent() {
         toastOptions={{
           style: {
             background: '#121017',
-            border: '1px solid rgba(240, 143, 0, 0.24)',
+            border: '1px solid rgba(240, 199, 94, 0.24)',
             color: '#fff',
             fontSize: '14px',
           },
@@ -648,11 +651,9 @@ function PlayPageContent() {
             </div>
           </div>
 
-          <div className="text-center">
-            <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-              <span className="text-cinema-gold">Bollywood</span>{' '}
-              <span className="text-cinema-gold">Connect</span>
-            </h1>
+          <div className="flex flex-col items-center text-center">
+            <BrandLogo variant="primary" imageClassName="h-24 w-24 object-contain drop-shadow-[0_0_28px_rgba(255,43,214,0.34)]" />
+            <h1 className="sr-only">Bollywood Connect</h1>
             <p className="mt-1 text-sm text-gray-400">Build the cleanest path from first frame to final star.</p>
           </div>
 
@@ -893,9 +894,10 @@ export default function PlayPage() {
           <motion.div
             animate={{ opacity: [0.45, 1, 0.45] }}
             transition={{ duration: 1.2, repeat: Infinity }}
-            className="game-card px-6 py-5 text-lg font-bold text-cinema-gold"
+            className="game-card flex flex-col items-center gap-3 px-6 py-5 text-lg font-bold text-cinema-gold"
           >
-            Loading...
+            <BrandLogo variant="gold" imageClassName="h-20 w-20 object-contain" />
+            <span>Loading...</span>
           </motion.div>
         </div>
       }

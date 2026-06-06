@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, Clock, Home, Loader2, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getDailyChallenge } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 function initials(name?: string) {
   if (!name) return '?';
@@ -72,6 +73,7 @@ export default function DailyPage() {
             <Home className="h-5 w-5" />
           </Link>
           <div className="text-center">
+            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-16 w-16 object-contain" />
             <p className="section-title">Daily Challenge</p>
             <h1 className="mt-1 text-3xl font-bold text-white">{dateLabel}</h1>
           </div>

@@ -1,0 +1,37 @@
+{
+  "brand_name": "Bollywood Connect",
+  "colors": {
+    "cinema_black": "#05030A",
+    "deep_purple": "#170028",
+    "royal_blue": "#145CFF",
+    "neon_pink": "#FF2BD6",
+    "premium_gold": "#F8C44C",
+    "warm_gold_shadow": "#A65F00",
+    "soft_white": "#FFF7D6"
+  },
+  "recommended_font_pairings": [
+    {
+      "logo_display": "Cinzel / Cinzel Decorative",
+      "ui_body": "Montserrat"
+    },
+    {
+      "logo_display": "Orbitron",
+      "ui_body": "Inter"
+    },
+    {
+      "logo_display": "Audiowide",
+      "ui_body": "Rajdhani"
+    },
+    {
+      "logo_display": "Syncopate",
+      "ui_body": "Poppins"
+    }
+  ],
+  "usage_notes": {
+    "app_icon": "Use golden_star_connected_nodes or primary_holographic_star_reel at 1024x1024 as the master icon.",
+    "navbar": "Use compact square icon plus wordmark from the web exports; avoid tiny detailed versions below 32px.",
+    "footer": "Use the horizontal web export at 320px or 480px width.",
+    "splash_screen": "Use the 4K square version centered on a deep black/purple gradient background.",
+    "favicon": "Use the included .ico files or 32x32/48x48 PNG exports."
+  }
+}

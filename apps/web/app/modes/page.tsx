@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { DIFFICULTIES, GAME_MODES, REGIONS, THEMES } from '@bollywood-connect/shared';
+import BrandLogo from '@/components/BrandLogo';
 
 const modeIcons: Record<string, ReactNode> = {
   classic: <Star className="h-7 w-7" />,
@@ -56,6 +57,7 @@ export default function ModesPage() {
         </Link>
 
         <div className="mb-8">
+          <BrandLogo variant="primary" className="mb-4 justify-start" imageClassName="h-28 w-28 object-contain drop-shadow-[0_0_24px_rgba(255,43,214,0.32)]" />
           <p className="section-title">Pick your showtime</p>
           <h1 className="mt-2 text-4xl font-bold text-white md:text-5xl">Choose Your Mode</h1>
           <p className="mt-3 max-w-2xl text-gray-400">Jump into classic play, race the clock, or narrow the film universe by region and theme.</p>

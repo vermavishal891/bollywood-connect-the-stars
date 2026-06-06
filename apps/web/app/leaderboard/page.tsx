@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Clock, Film, Home, Loader2, Medal, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getLeaderboard } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 const filters = ['all', 'easy', 'medium', 'hard', 'legend'];
 
@@ -37,6 +38,7 @@ export default function LeaderboardPage() {
             <Home className="h-5 w-5" />
           </Link>
           <div className="text-center">
+            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-16 w-16 object-contain" />
             <p className="section-title">High Scores</p>
             <h1 className="mt-1 text-3xl font-bold text-white md:text-4xl">Leaderboard</h1>
           </div>

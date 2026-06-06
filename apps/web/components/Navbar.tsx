@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Film, Trophy, Calendar, Settings, Home, Sparkles, HelpCircle, User, LogOut } from 'lucide-react';
+import { Trophy, Calendar, Settings, Home, Sparkles, HelpCircle, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import GoogleLoginButton from './GoogleLoginButton';
+import BrandLogo from './BrandLogo';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -21,17 +22,9 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-cinema-600/40 bg-cinema-900/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 md:px-6">
-        <Link href="/" className="group flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold">
-            <Film className="h-5 w-5 transition-transform group-hover:rotate-12" />
-          </span>
-          <span className="hidden font-display text-xl font-bold leading-none sm:inline">
-            <span className="text-cinema-gold">Bollywood</span>{' '}
-            <span className="text-cinema-gold">Connect</span>
-          </span>
-          <span className="sr-only">
-            Bollywood Connect
-          </span>
+        <Link href="/" className="group flex shrink-0 items-center rounded-lg px-1 py-1">
+          <BrandLogo variant="primary" imageClassName="h-14 w-14 sm:h-16 sm:w-16 drop-shadow-[0_0_18px_rgba(255,43,214,0.35)]" />
+          <span className="sr-only">Bollywood Connect</span>
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2">

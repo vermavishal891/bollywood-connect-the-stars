@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Home, User, Save, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth-context';
+import BrandLogo from '@/components/BrandLogo';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -66,7 +67,10 @@ export default function SettingsPage() {
           <Link href="/" className="text-cinema-gold hover:text-white transition-colors">
             <Home className="w-6 h-6" />
           </Link>
-          <h1 className="text-2xl font-bold gold-gradient">Settings</h1>
+          <div className="text-center">
+            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-14 w-14 object-contain" />
+            <h1 className="text-2xl font-bold text-white">Settings</h1>
+          </div>
           <div className="w-6" />
         </div>
 

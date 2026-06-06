@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { DIFFICULTIES, GAME_MODES, REGIONS, THEMES } from '@bollywood-connect/shared';
+import BrandLogo from '@/components/BrandLogo';
 
 const gameModeIcons: Record<string, ReactNode> = {
   classic: <Star className="h-6 w-6" />,
@@ -71,11 +72,12 @@ export default function HomePage() {
       <section className="px-4 py-12 md:px-6 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-center">
           <div>
-            <h1 className="font-display text-5xl font-bold leading-tight tracking-tight md:text-7xl">
-              <span className="text-cinema-gold">Bollywood</span>
-              <br />
-              <span className="text-cinema-gold">Connect</span>
-            </h1>
+            <BrandLogo
+              variant="primary"
+              className="mb-2 justify-start"
+              imageClassName="h-56 w-56 md:h-72 md:w-72 drop-shadow-[0_0_42px_rgba(255,43,214,0.34)]"
+            />
+            <h1 className="sr-only">Bollywood Connect</h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300 md:text-xl">
               Link Indian film stars through shared movies. Every move alternates between actor and film until the target star is on your path.
             </p>
@@ -106,11 +108,21 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-3">
-              <PreviewNode icon={<Star className="h-6 w-6 fill-current" />} label="Shah Rukh Khan" />
+              <PreviewNode
+                icon={<img src="/brand/03_app_icons/golden_star_connected_nodes_icon_64x64.png" alt="" className="h-9 w-9 object-contain" />}
+                label="Shah Rukh Khan"
+              />
               <div className="ml-16 h-8 w-px bg-gradient-to-b from-cinema-gold/80 to-cinema-red-light/50" />
-              <PreviewNode icon={<Film className="h-6 w-6" />} label="Dear Zindagi" tone="red" />
+              <PreviewNode
+                icon={<img src="/brand/03_app_icons/neon_glamour_primary_icon_64x64.png" alt="" className="h-9 w-9 object-contain" />}
+                label="Dear Zindagi"
+                tone="red"
+              />
               <div className="ml-16 h-8 w-px bg-gradient-to-b from-cinema-red-light/70 to-cinema-gold/70" />
-              <PreviewNode icon={<Star className="h-6 w-6 fill-current" />} label="Alia Bhatt" />
+              <PreviewNode
+                icon={<img src="/brand/03_app_icons/golden_star_connected_nodes_icon_64x64.png" alt="" className="h-9 w-9 object-contain" />}
+                label="Alia Bhatt"
+              />
             </div>
           </div>
         </div>
@@ -214,7 +226,8 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-cinema-600/40 px-4 py-8 text-center text-sm text-gray-500">
-        <p>Bollywood Connect - made for Indian cinema fans.</p>
+        <BrandLogo variant="footer" className="mx-auto mb-3" imageClassName="h-24 w-24 object-contain" />
+        <p>Made for Indian cinema fans.</p>
         <div className="mt-3 flex justify-center gap-4">
           <Link href="/how-to-play" className="transition-colors hover:text-cinema-gold">
             How to Play

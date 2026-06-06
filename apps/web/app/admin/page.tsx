@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Home, Users, Film, Trophy, AlertCircle, TrendingUp, Cloud, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAdminStats, getAdminActors, getAdminMovies } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function AdminPage() {
   const [stats, setStats] = useState<any>(null);
@@ -40,7 +41,10 @@ export default function AdminPage() {
           <Link href="/" className="text-cinema-gold hover:text-white transition-colors">
             <Home className="w-6 h-6" />
           </Link>
-          <h1 className="text-2xl font-bold gold-gradient">Admin Dashboard</h1>
+          <div className="text-center">
+            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-14 w-14 object-contain" />
+            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+          </div>
           <div className="w-6" />
         </div>
 

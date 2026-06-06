@@ -1,0 +1,32 @@
+/* Bollywood Connect brand font suggestions. Font files are not included. */
+:root {
+  --bc-black: #05030A;
+  --bc-purple: #170028;
+  --bc-blue: #145CFF;
+  --bc-pink: #FF2BD6;
+  --bc-gold: #F8C44C;
+  --bc-gold-shadow: #A65F00;
+  --bc-soft-white: #FFF7D6;
+}
+
+/* Recommended Google-font style pairing:
+   Logo / headings: Cinzel, Cinzel Decorative, Orbitron, Audiowide, Syncopate
+   UI / body: Inter, Montserrat, Poppins, Rajdhani
+*/
+
+.bc-logo-heading {
+  font-family: "Cinzel", "Cinzel Decorative", "Trajan Pro", serif;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.bc-ui-text {
+  font-family: "Inter", "Montserrat", "Poppins", system-ui, sans-serif;
+}
+
+.bc-neon-gradient-text {
+  background: linear-gradient(90deg, var(--bc-gold), var(--bc-pink), var(--bc-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

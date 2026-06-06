@@ -14,10 +14,13 @@
   body {
     @apply min-h-screen bg-cinema-900 text-white antialiased;
     background:
-      linear-gradient(180deg, rgba(8, 7, 10, 0.52), rgba(8, 7, 10, 0.94) 54%, #08070a 100%),
-      radial-gradient(1200px 620px at 50% -180px, rgba(240, 143, 0, 0.18), transparent 64%),
-      radial-gradient(900px 520px at 8% 26%, rgba(196, 58, 61, 0.14), transparent 68%),
-      linear-gradient(135deg, #08070a 0%, #111017 48%, #070609 100%);
+      linear-gradient(180deg, rgba(5, 3, 10, 0.38), rgba(5, 3, 10, 0.9) 50%, #05030a 100%),
+      url('/brand/02_upscaled_4k/primary_holographic_star_reel_4096x4096.png'),
+      linear-gradient(135deg, #05030a 0%, #170028 45%, #05030a 100%);
+    background-attachment: fixed;
+    background-position: top center, top center, center;
+    background-repeat: no-repeat;
+    background-size: cover, min(980px, 90vw) auto, cover;
   }
 
   body::before {
@@ -27,40 +30,41 @@
     z-index: -1;
     pointer-events: none;
     background:
-      linear-gradient(90deg, rgba(240, 143, 0, 0.05) 0 1px, transparent 1px 100%),
+      linear-gradient(90deg, rgba(248, 196, 76, 0.07) 0 1px, transparent 1px 100%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 100%);
     background-size: 72px 72px;
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 72%);
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 80%);
   }
 
   ::selection {
-    background: rgba(240, 143, 0, 0.32);
+    background: rgba(255, 43, 214, 0.32);
     color: #fff8df;
   }
 }
 
 @layer components {
   .cinema-card {
-    @apply rounded-lg border border-cinema-600/50 bg-cinema-800/80 shadow-2xl shadow-black/30 backdrop-blur-md;
+    @apply rounded-lg border border-cinema-600/60 bg-cinema-800/80 shadow-2xl shadow-black/30 backdrop-blur-md;
   }
 
   .cinema-glow {
     box-shadow:
-      0 0 0 1px rgba(240, 143, 0, 0.24),
+      0 0 0 1px rgba(248, 196, 76, 0.28),
       0 18px 48px rgba(0, 0, 0, 0.45),
-      0 0 38px rgba(240, 143, 0, 0.08);
+      0 0 44px rgba(255, 43, 214, 0.16),
+      0 0 54px rgba(20, 92, 255, 0.12);
   }
 
   .gold-gradient {
-    @apply bg-gradient-to-r from-cinema-gold via-cinema-gold to-cinema-gold bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-cinema-gold via-cinema-red-light to-cinema-blue bg-clip-text text-transparent;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-gold/60 bg-cinema-gold px-5 py-3 text-sm font-bold text-cinema-900 shadow-lg shadow-cinema-gold/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cinema-gold-light hover:shadow-cinema-gold/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-gold/70 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-gold/60 bg-gradient-to-r from-cinema-gold via-cinema-red-light to-cinema-blue px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cinema-red/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-cinema-blue/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/70 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-600/70 bg-cinema-700/70 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-gold/40 hover:bg-cinema-600/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-gold/40 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-600/70 bg-cinema-700/70 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-red-light/50 hover:bg-cinema-600/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .btn-danger {
@@ -68,7 +72,7 @@
   }
 
   .icon-button {
-    @apply inline-flex h-11 w-11 items-center justify-center rounded-lg border border-cinema-600/60 bg-cinema-800/70 text-cinema-gold transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-gold/50 hover:bg-cinema-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-gold/40 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-lg border border-cinema-600/60 bg-cinema-800/70 text-cinema-gold transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-red-light/50 hover:bg-cinema-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .search-input {
@@ -101,11 +105,11 @@
   }
 
   .game-card {
-    @apply rounded-lg border border-cinema-600/50 bg-cinema-800/90 shadow-2xl shadow-black/40 backdrop-blur-xl;
+    @apply rounded-lg border border-cinema-600/60 bg-cinema-800/90 shadow-2xl shadow-black/40 backdrop-blur-xl;
   }
 
   .command-panel {
-    @apply rounded-lg border border-cinema-gold/20 bg-black/40 shadow-2xl shadow-black/40 backdrop-blur-xl;
+    @apply rounded-lg border border-cinema-red-light/25 bg-black/45 shadow-2xl shadow-black/40 backdrop-blur-xl;
   }
 
   .stat-pill {
@@ -138,10 +142,10 @@
   @keyframes marqueeGlow {
     0%,
     100% {
-      box-shadow: 0 0 0 1px rgba(240, 143, 0, 0.22), 0 0 24px rgba(240, 143, 0, 0.08);
+      box-shadow: 0 0 0 1px rgba(248, 196, 76, 0.22), 0 0 24px rgba(255, 43, 214, 0.1);
     }
     50% {
-      box-shadow: 0 0 0 1px rgba(240, 143, 0, 0.42), 0 0 34px rgba(240, 143, 0, 0.16);
+      box-shadow: 0 0 0 1px rgba(248, 196, 76, 0.42), 0 0 34px rgba(20, 92, 255, 0.18);
     }
   }
 
@@ -160,10 +164,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(240, 143, 0, 0.64);
+  background: rgba(240, 199, 94, 0.64);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #F08F00;
+  background: #f6d77d;
 }
