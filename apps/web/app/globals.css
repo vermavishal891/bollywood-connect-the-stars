@@ -52,7 +52,7 @@
   }
 
   .gold-gradient {
-    @apply bg-gradient-to-r from-cinema-gold via-cinema-gold-light to-yellow-200 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-cinema-gold via-cinema-gold to-cinema-gold bg-clip-text text-transparent;
   }
 
   .btn-primary {
