@@ -650,7 +650,7 @@ function PlayPageContent() {
 
           <div className="text-center">
             <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-              <span className="text-cinema-red-light">Bollywood</span>{' '}
+              <span className="text-cinema-gold">Bollywood</span>{' '}
               <span className="text-cinema-gold">Connect</span>
             </h1>
             <p className="mt-1 text-sm text-gray-400">Build the cleanest path from first frame to final star.</p>
