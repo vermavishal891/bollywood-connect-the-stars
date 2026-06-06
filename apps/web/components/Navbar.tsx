@@ -19,45 +19,53 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-cinema-900/90 backdrop-blur-md border-b border-cinema-700/50">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <Film className="w-6 h-6 text-cinema-gold group-hover:rotate-12 transition-transform" />
-          <span className="font-display font-bold text-lg gold-gradient hidden sm:inline">
+    <nav className="sticky top-0 z-50 border-b border-cinema-600/40 bg-cinema-900/90 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 md:px-6">
+        <Link href="/" className="group flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold">
+            <Film className="h-5 w-5 transition-transform group-hover:rotate-12" />
+          </span>
+          <span className="hidden font-display text-xl font-bold leading-none sm:inline">
+            <span className="text-cinema-red-light">Bollywood</span>{' '}
+            <span className="text-cinema-gold">Connect</span>
+          </span>
+          <span className="sr-only">
             Bollywood Connect
           </span>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-lg border border-cinema-600/40 bg-black/20 p-1">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-all ${
                 pathname === link.href
-                  ? 'bg-cinema-gold/20 text-cinema-gold'
-                  : 'text-gray-400 hover:text-white hover:bg-cinema-800'
+                  ? 'bg-cinema-gold text-cinema-900 shadow-sm shadow-cinema-gold/20'
+                  : 'text-gray-400 hover:bg-cinema-800/80 hover:text-white'
               }`}
             >
               {link.icon}
-              <span className="hidden sm:inline">{link.label}</span>
+              <span className="hidden md:inline">{link.label}</span>
             </Link>
           ))}
+          </div>
+
           <Link
             href="/play"
-            className="flex items-center gap-1.5 px-4 py-2 bg-cinema-gold text-cinema-900 font-bold rounded-lg text-sm hover:bg-yellow-400 transition-colors"
+            className="btn-primary shrink-0 px-4 py-2.5"
           >
             <Sparkles className="w-4 h-4" />
-            Play
+            <span className="hidden sm:inline">Play</span>
           </Link>
 
-          {/* Auth section */}
-          <div className="ml-2 flex items-center">
+          <div className="flex shrink-0 items-center">
             {user ? (
               <div className="flex items-center gap-2">
                 <Link
                   href="/settings"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-cinema-800 transition-all"
+                  className="flex items-center gap-2 rounded-lg border border-cinema-600/40 bg-black/20 px-2 py-2 text-sm text-gray-300 transition-all hover:bg-cinema-800/80 hover:text-white"
                   title="Settings"
                 >
                   {user.imageUrl ? (
@@ -69,7 +77,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={logout}
-                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-cinema-800 rounded-lg transition-all"
+                  className="icon-button h-10 w-10 text-gray-400 hover:text-cinema-red-light"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />

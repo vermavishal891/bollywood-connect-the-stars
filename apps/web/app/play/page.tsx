@@ -1,28 +1,29 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { Fragment, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Star,
-  Film,
-  Undo2,
-  RotateCcw,
-  Lightbulb,
-  Share2,
-  Trophy,
-  Clock,
   ArrowRight,
+  ChevronDown,
+  Clock,
+  Film,
   Home,
-  Sparkles,
-  Search,
   Info,
-  X,
+  Lightbulb,
   Loader2,
+  RotateCcw,
+  Search,
+  Share2,
+  Sparkles,
+  Star,
+  Trophy,
+  Undo2,
+  X,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
-import { createGame, getGame, makeMove, undoMove, resetGame, getHint, search } from '@/lib/api';
+import { createGame, getGame, getHint, makeMove, resetGame, search, undoMove } from '@/lib/api';
 
 interface GameMove {
   id: number;
@@ -36,8 +37,20 @@ interface GameMove {
 
 interface GameData {
   id: string;
-  startActor: { id: number; name: string; profileImageUrl?: string | null; description?: string | null; trivia?: string | null };
-  targetActor: { id: number; name: string; profileImageUrl?: string | null; description?: string | null; trivia?: string | null };
+  startActor: {
+    id: number;
+    name: string;
+    profileImageUrl?: string | null;
+    description?: string | null;
+    trivia?: string | null;
+  };
+  targetActor: {
+    id: number;
+    name: string;
+    profileImageUrl?: string | null;
+    description?: string | null;
+    trivia?: string | null;
+  };
   difficulty: string;
   mode: string;
   status: string;
@@ -48,89 +61,343 @@ interface GameData {
   moves: GameMove[];
 }
 
+interface ActorResult {
+  id: number;
+  name: string;
+  profileImageUrl?: string | null;
+  description?: string | null;
+}
+
+interface MovieResult {
+  id: number;
+  title: string;
+  posterUrl?: string | null;
+  releaseYear?: number | null;
+  genre?: string | null;
+}
+
+type SearchResults = {
+  actors: ActorResult[];
+  movies: MovieResult[];
+};
+
+const springFast = { type: 'spring' as const, stiffness: 500, damping: 28 };
+const springPop = { type: 'spring' as const, stiffness: 600, damping: 20 };
+
+const hintOptions = [
+  { id: 'soft', label: 'Soft Hint' },
+  { id: 'first-letter', label: 'First Letter' },
+  { id: 'decade', label: 'Decade' },
+  { id: 'best-next', label: 'Best Next' },
+];
+
 function getInitials(name: string) {
   return name
     .split(' ')
-    .map((w) => w[0])
+    .map((word) => word[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
 }
 
-function ActorAvatar({ url, name, size = 40 }: { url?: string | null; name: string; size?: number }) {
-  if (url) {
+function toTitle(value: string) {
+  return value
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function parseTrivia(trivia?: string | null) {
+  if (!trivia) return [];
+  try {
+    const parsed = JSON.parse(trivia);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [trivia];
+  }
+}
+
+function ActorAvatar({ url, name, size = 96, featured = false }: { url?: string | null; name: string; size?: number; featured?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const commonStyle = { width: size, height: size };
+
+  if (url && !failed) {
     return (
       <img
         src={url}
         alt={name}
-        className="rounded-full object-cover border-2 border-cinema-gold shrink-0"
-        style={{ width: size, height: size }}
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }}
+        className={`${featured ? 'hero-avatar' : 'move-avatar'} shrink-0 bg-cinema-700`}
+        style={commonStyle}
+        onError={() => setFailed(true)}
       />
     );
   }
+
   return (
     <div
-      className="rounded-full bg-cinema-600 flex items-center justify-center text-cinema-gold font-bold shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
+      className={`${featured ? 'hero-avatar' : 'move-avatar'} flex shrink-0 items-center justify-center bg-gradient-to-br from-cinema-600 to-cinema-900 font-bold text-cinema-gold`}
+      style={{ ...commonStyle, fontSize: size * 0.32 }}
     >
       {getInitials(name)}
     </div>
   );
 }
 
-function MoviePoster({ url, title, size = 40 }: { url?: string | null; title: string; size?: number }) {
-  if (url) {
+function MoviePoster({ url, title, size = 96 }: { url?: string | null; title: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const width = Math.round(size * 0.72);
+
+  if (url && !failed) {
     return (
       <img
         src={url}
         alt={title}
-        className="rounded-lg object-cover border border-cinema-red-light/50 shrink-0"
-        style={{ width: size * 0.75, height: size }}
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }}
+        className="move-poster shrink-0 bg-cinema-700"
+        style={{ width, height: size }}
+        onError={() => setFailed(true)}
       />
     );
   }
+
   return (
     <div
-      className="rounded-lg bg-cinema-700 flex items-center justify-center text-cinema-red-light shrink-0"
-      style={{ width: size * 0.75, height: size }}
+      className="move-poster flex shrink-0 items-center justify-center bg-gradient-to-br from-cinema-700 to-cinema-900 text-cinema-red-light"
+      style={{ width, height: size }}
     >
-      <Film className="w-5 h-5" />
+      <Film className="h-7 w-7 opacity-70" />
     </div>
   );
 }
 
-function TriviaCard({ title, description, trivia, onClose }: { title: string; description?: string | null; trivia?: string | null; onClose: () => void }) {
-  const facts: string[] = trivia ? (typeof trivia === 'string' ? JSON.parse(trivia) : trivia) : [];
+function StatPill({ icon, label, value, accent = 'gold' }: { icon: ReactNode; label: string; value: ReactNode; accent?: 'gold' | 'red' | 'teal' }) {
+  const accentClass = {
+    gold: 'text-cinema-gold',
+    red: 'text-cinema-red-light',
+    teal: 'text-cinema-teal',
+  }[accent];
+
+  return (
+    <div className="stat-pill min-w-[98px] justify-center">
+      <span className={accentClass}>{icon}</span>
+      <span className="min-w-0">
+        <span className="block text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-gray-500">{label}</span>
+        <span className="block truncate font-semibold leading-tight text-white">{value}</span>
+      </span>
+    </div>
+  );
+}
+
+function TriviaCard({
+  title,
+  description,
+  trivia,
+  onClose,
+}: {
+  title: string;
+  description?: string | null;
+  trivia?: string | null;
+  onClose: () => void;
+}) {
+  const facts = parseTrivia(trivia);
   const randomFact = facts.length > 0 ? facts[Math.floor(Math.random() * facts.length)] : null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      className="cinema-card p-4 mb-4 border-l-4 border-cinema-gold"
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+      transition={springFast}
+      className="game-card mb-5 overflow-hidden border-l-4 border-l-cinema-gold p-5"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-bold text-cinema-gold text-sm mb-1">{title}</h3>
-          {description && <p className="text-xs text-gray-300 mb-2 line-clamp-3">{description}</p>}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="section-title mb-2">Spotlight</p>
+          <h3 className="mb-1 text-lg font-bold text-white">{title}</h3>
+          {description && <p className="mb-2 line-clamp-3 text-sm leading-6 text-gray-300">{description}</p>}
           {randomFact && (
-            <p className="text-xs text-cinema-gold-light">
-              <span className="font-semibold">Did you know?</span> {randomFact}
+            <p className="text-sm leading-6 text-cinema-gold-light">
+              <span className="font-semibold text-cinema-gold">Did you know?</span> {randomFact}
             </p>
           )}
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-white shrink-0">
-          <X className="w-4 h-4" />
+        <button onClick={onClose} className="icon-button h-9 w-9 shrink-0 text-gray-400" aria-label="Close trivia">
+          <X className="h-4 w-4" />
         </button>
       </div>
     </motion.div>
+  );
+}
+
+function ActorSpotlight({
+  actor,
+  label,
+  tone,
+}: {
+  actor: GameData['startActor'];
+  label: 'Start' | 'Target';
+  tone: 'gold' | 'red';
+}) {
+  const accent = tone === 'gold' ? 'text-cinema-gold border-cinema-gold/40' : 'text-cinema-red-light border-cinema-red-light/40';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springPop}
+      className="flex min-w-0 flex-col items-center text-center"
+    >
+      <span className={`mb-3 rounded-lg border bg-black/30 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] ${accent}`}>
+        {label}
+      </span>
+      <ActorAvatar url={actor.profileImageUrl} name={actor.name} size={112} featured />
+      <h2 className="mt-3 max-w-[230px] text-balance text-xl font-bold leading-tight text-white md:text-2xl">{actor.name}</h2>
+    </motion.div>
+  );
+}
+
+function PathNode({ move, index, onTrivia }: { move: GameMove; index: number; onTrivia: () => void }) {
+  const isActor = move.entityType === 'actor';
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.92, y: 12 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92, y: 12 }}
+      transition={springFast}
+      className={`group relative flex w-[144px] shrink-0 flex-col items-center rounded-lg border p-2.5 text-center transition-all hover:-translate-y-0.5 ${
+        isActor
+          ? 'border-cinema-gold/40 bg-cinema-gold/10 hover:border-cinema-gold/75'
+          : 'border-cinema-red-light/40 bg-cinema-red/20 hover:border-cinema-red-light/70'
+      }`}
+    >
+      <span className="absolute left-2 top-2 rounded-md border border-white/10 bg-black/30 px-2 py-0.5 text-[0.65rem] font-bold text-gray-300">
+        {index === 0 ? 'Start' : index + 1}
+      </span>
+      {isActor ? <ActorAvatar url={move.imageUrl} name={move.entityName} size={70} /> : <MoviePoster url={move.imageUrl} title={move.entityName} size={82} />}
+      <span className="mt-2 line-clamp-2 min-h-[2.25rem] text-sm font-bold leading-5 text-white">{move.entityName}</span>
+      <span className={`mt-2 text-[0.66rem] font-bold uppercase tracking-[0.2em] ${isActor ? 'text-cinema-gold/80' : 'text-cinema-red-light/80'}`}>
+        {move.entityType}
+      </span>
+      {move.trivia && (
+        <button
+          onClick={onTrivia}
+          className="absolute right-2 top-2 rounded-md p-1.5 text-gray-400 opacity-100 transition-colors hover:bg-black/30 hover:text-cinema-gold md:opacity-0 md:group-hover:opacity-100"
+          aria-label={`Show trivia for ${move.entityName}`}
+        >
+          <Info className="h-4 w-4" />
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+function CommandButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  danger = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <motion.button
+      whileHover={{ scale: disabled ? 1 : 1.03 }}
+      whileTap={{ scale: disabled ? 1 : 0.97 }}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${danger ? 'btn-danger' : 'btn-secondary'} min-w-[104px] px-4 py-3`}
+    >
+      {icon}
+      {label}
+    </motion.button>
+  );
+}
+
+function SearchResultsPanel({
+  results,
+  isSearching,
+  isMovieTurn,
+  onMove,
+}: {
+  results: SearchResults;
+  isSearching: boolean;
+  isMovieTurn: boolean;
+  onMove: (entityType: 'actor' | 'movie', entityId: number) => void;
+}) {
+  if (isSearching) {
+    return (
+      <div className="p-6 text-center text-gray-400">
+        <Loader2 className="mr-2 inline h-5 w-5 animate-spin text-cinema-gold" />
+        Searching...
+      </div>
+    );
+  }
+
+  if (results.actors.length === 0 && results.movies.length === 0) {
+    return <div className="p-6 text-center text-gray-400">No results found</div>;
+  }
+
+  const actorSection = results.actors.length > 0 && (
+    <div className="p-3">
+          <p className="section-title px-2 pb-2">Actors</p>
+          {results.actors.map((actor) => (
+            <motion.button
+              key={actor.id}
+              whileHover={{ scale: isMovieTurn ? 1 : 1.01 }}
+              whileTap={{ scale: isMovieTurn ? 1 : 0.98 }}
+              onClick={() => onMove('actor', actor.id)}
+              disabled={isMovieTurn}
+              className="flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-cinema-700/70 disabled:opacity-35"
+            >
+              <ActorAvatar url={actor.profileImageUrl} name={actor.name} size={58} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold text-white">{actor.name}</span>
+                {actor.description && <span className="line-clamp-1 text-sm text-gray-400">{actor.description}</span>}
+              </span>
+            </motion.button>
+          ))}
+    </div>
+  );
+
+  const movieSection = results.movies.length > 0 && (
+    <div className="p-3">
+          <p className="section-title px-2 pb-2">Movies</p>
+          {results.movies.map((movie) => (
+            <motion.button
+              key={movie.id}
+              whileHover={{ scale: !isMovieTurn ? 1 : 1.01 }}
+              whileTap={{ scale: !isMovieTurn ? 1 : 0.98 }}
+              onClick={() => onMove('movie', movie.id)}
+              disabled={!isMovieTurn}
+              className="flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-cinema-700/70 disabled:opacity-35"
+            >
+              <MoviePoster url={movie.posterUrl} title={movie.title} size={64} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold text-white">{movie.title}</span>
+                <span className="text-sm text-gray-400">
+                  {movie.releaseYear || 'Year unknown'}{movie.genre ? ` - ${movie.genre}` : ''}
+                </span>
+              </span>
+            </motion.button>
+          ))}
+    </div>
+  );
+
+  return isMovieTurn ? (
+    <>
+      {movieSection}
+      {actorSection}
+    </>
+  ) : (
+    <>
+      {actorSection}
+      {movieSection}
+    </>
   );
 }
 
@@ -142,31 +409,49 @@ function PlayPageContent() {
   const theme = searchParams.get('theme') || undefined;
 
   const [game, setGame] = useState<GameData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{ actors: any[]; movies: any[] }>({ actors: [], movies: [] });
+  const [searchResults, setSearchResults] = useState<SearchResults>({ actors: [], movies: [] });
   const [isSearching, setIsSearching] = useState(false);
   const [timer, setTimer] = useState(0);
   const [showShare, setShowShare] = useState(false);
   const [shareText, setShareText] = useState('');
   const [triviaEntity, setTriviaEntity] = useState<{ name: string; description?: string | null; trivia?: string | null } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showHints, setShowHints] = useState(false);
 
-  useEffect(() => {
-    const init = async () => {
+  const startGame = useCallback(
+    async (announce = false) => {
+      setIsProcessing(true);
+      setLoadError(null);
       try {
         const newGame = await createGame({ mode, difficulty, region, theme });
         const fullGame = await getGame(newGame.id);
         setGame(fullGame);
+        setTimer(0);
+        setShowShare(false);
+        setTriviaEntity(null);
+        setSearchQuery('');
+        setSearchResults({ actors: [], movies: [] });
+        if (announce) toast.success('New game started');
       } catch (err: any) {
-        toast.error(err.message || 'Failed to start game');
+        const message = err.message || 'Failed to start game';
+        setLoadError(message);
+        toast.error(message);
+      } finally {
+        setIsProcessing(false);
       }
-    };
-    init();
-  }, [mode, difficulty, region, theme]);
+    },
+    [difficulty, mode, region, theme]
+  );
+
+  useEffect(() => {
+    startGame();
+  }, [startGame]);
 
   useEffect(() => {
     if (!game || game.status !== 'active') return;
-    const interval = setInterval(() => setTimer((t) => t + 1), 1000);
+    const interval = setInterval(() => setTimer((time) => time + 1), 1000);
     return () => clearInterval(interval);
   }, [game?.status]);
 
@@ -176,19 +461,25 @@ function PlayPageContent() {
         setSearchResults({ actors: [], movies: [] });
         return;
       }
+
       setIsSearching(true);
       try {
         const results = await search(searchQuery);
         setSearchResults(results);
-      } catch {}
-      setIsSearching(false);
+      } catch {
+        setSearchResults({ actors: [], movies: [] });
+      } finally {
+        setIsSearching(false);
+      }
     };
+
     const timeout = setTimeout(doSearch, 300);
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
-  const handleMove = async (entityType: 'actor' | 'movie', entityId: number, entityName: string) => {
+  const handleMove = async (entityType: 'actor' | 'movie', entityId: number) => {
     if (!game || game.status !== 'active' || isProcessing) return;
+
     setIsProcessing(true);
     try {
       const result = await makeMove(game.id, { entityType, entityId });
@@ -207,9 +498,9 @@ function PlayPageContent() {
       }
 
       if (result.won) {
-        toast.success(`🎉 You won! Score: ${result.score}`, { duration: 5000 });
+        toast.success(`You won! Score: ${result.score}`, { duration: 4000 });
         setShareText(
-          `I connected ${updated.startActor.name} → ${updated.targetActor.name} in ${updated.movesCount} moves!\n\nCan you beat me?`
+          `I connected ${updated.startActor.name} -> ${updated.targetActor.name} in ${updated.movesCount} moves!\n\nCan you beat me?`
         );
         setShowShare(true);
       }
@@ -223,6 +514,7 @@ function PlayPageContent() {
 
   const handleUndo = async () => {
     if (!game || game.moves.length <= 1 || isProcessing) return;
+
     setIsProcessing(true);
     try {
       await undoMove(game.id);
@@ -239,6 +531,7 @@ function PlayPageContent() {
 
   const handleReset = async () => {
     if (!game || isProcessing) return;
+
     setIsProcessing(true);
     try {
       await resetGame(game.id);
@@ -260,10 +553,12 @@ function PlayPageContent() {
 
   const handleHint = async (type: string) => {
     if (!game || game.status !== 'active' || isProcessing) return;
+
     setIsProcessing(true);
+    setShowHints(false);
     try {
       const hint = await getHint(game.id, type);
-      toast(hint.message, { icon: '💡', duration: 4000 });
+      toast(hint.message, { duration: 3500 });
       const updated = await getGame(game.id);
       setGame(updated);
     } catch (err: any) {
@@ -276,71 +571,115 @@ function PlayPageContent() {
 
   const handleNewGame = async () => {
     if (isProcessing) return;
-    setIsProcessing(true);
-    try {
-      const newGame = await createGame({ mode, difficulty, region, theme });
-      const fullGame = await getGame(newGame.id);
-      setGame(fullGame);
-      setTimer(0);
-      setShowShare(false);
-      setTriviaEntity(null);
-      setSearchQuery('');
-      setSearchResults({ actors: [], movies: [] });
-      toast.success('New game started!');
-    } catch (err: any) {
-      console.error('New game error:', err);
-      toast.error(err.message || 'Failed to start new game');
-    } finally {
-      setIsProcessing(false);
-    }
+    await startGame(true);
   };
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   if (!game) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-cinema-gold animate-pulse text-xl">Loading game...</div>
+      <div className="flex min-h-screen items-center justify-center px-4">
+        {loadError ? (
+          <div className="game-card max-w-md p-6 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-red-light/40 bg-cinema-red/20 text-cinema-red-light">
+              <X className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Could not start the game</h1>
+            <p className="mt-3 text-sm leading-6 text-gray-400">{loadError}</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button onClick={() => startGame(true)} disabled={isProcessing} className="btn-primary">
+                {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <RotateCcw className="h-5 w-5" />}
+                Try Again
+              </button>
+              <Link href="/" className="btn-secondary">
+                <Home className="h-5 w-5" />
+                Home
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <motion.div
+            animate={{ opacity: [0.45, 1, 0.45] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+            className="game-card px-6 py-5 text-lg font-bold text-cinema-gold"
+          >
+            Loading game...
+          </motion.div>
+        )}
       </div>
     );
   }
 
   const isWon = game.status === 'completed';
-  // Game starts with 1 move (start actor). User must pick a movie next.
-  // Odd move count = just placed an actor, need movie next.
-  // Even move count = just placed a movie, need actor next.
   const isMovieTurn = game.moves.length % 2 === 1;
+  const turnLabel = isMovieTurn ? 'Pick a movie' : 'Pick an actor';
+  const turnHelp = isMovieTurn
+    ? 'Connect the last actor in your path to a film.'
+    : 'Choose a co-star from the previous movie.';
+  const progress = isWon ? 100 : Math.min(100, (game.moves.length / 8) * 100);
 
   return (
-    <div className="min-h-screen px-4 py-6">
-      <Toaster position="top-center" toastOptions={{ style: { background: '#1a1a25', color: '#fff' } }} />
+    <div className="min-h-screen px-3 py-5 md:px-8 md:py-8">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#121017',
+            border: '1px solid rgba(240, 143, 0, 0.24)',
+            color: '#fff',
+            fontSize: '14px',
+          },
+        }}
+      />
 
-      <div className="max-w-3xl mx-auto mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <Link href="/" className="text-cinema-gold hover:text-white transition-colors">
-            <Home className="w-6 h-6" />
-          </Link>
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-6 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="icon-button" aria-label="Go home">
+              <Home className="h-5 w-5" />
+            </Link>
+            <div className="stat-pill max-w-full">
+              <Film className="h-4 w-4 text-cinema-gold" />
+              <span className="truncate font-semibold">{toTitle(game.mode)} - {toTitle(game.difficulty)}</span>
+            </div>
+          </div>
+
           <div className="text-center">
-            <h1 className="text-xl font-bold gold-gradient">Bollywood Connect</h1>
-            <p className="text-xs text-gray-400 capitalize">{game.mode} · {game.difficulty}</p>
+            <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
+              <span className="text-cinema-red-light">Bollywood</span>{' '}
+              <span className="text-cinema-gold">Connect</span>
+            </h1>
+            <p className="mt-1 text-sm text-gray-400">Build the cleanest path from first frame to final star.</p>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <div className="flex items-center gap-1 text-cinema-gold">
-              <Clock className="w-4 h-4" />
-              {formatTime(timer)}
-            </div>
-            <div className="flex items-center gap-1 text-cinema-gold-light">
-              <Trophy className="w-4 h-4" />
-              {game.score}
-            </div>
-          </div>
-        </div>
 
-        {/* Trivia Panel */}
+          <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
+            <StatPill icon={<Clock className="h-5 w-5" />} label="Time" value={formatTime(timer)} />
+            <StatPill icon={<Trophy className="h-5 w-5" />} label="Score" value={game.score} accent="teal" />
+            <StatPill icon={<Star className="h-5 w-5" />} label="Moves" value={game.movesCount} accent="red" />
+          </div>
+        </header>
+
+        {!isWon && (
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+              <span>Path progress</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-black/30">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-cinema-gold via-cinema-gold-light to-cinema-red-light"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={springFast}
+              />
+            </div>
+          </div>
+        )}
+
         <AnimatePresence>
           {triviaEntity && (
             <TriviaCard
@@ -352,220 +691,194 @@ function PlayPageContent() {
           )}
         </AnimatePresence>
 
-        <div className="cinema-card p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-center">
-              <div className="flex flex-col items-center mb-2">
-                <ActorAvatar url={game.startActor.profileImageUrl} name={game.startActor.name} size={56} />
-                <div className="node-actor inline-flex mt-2">
-                  <Star className="w-5 h-5 text-cinema-gold" />
-                  <span className="font-bold">{game.startActor.name}</span>
-                </div>
+        <section className="game-card mb-4 overflow-hidden p-4 md:p-5">
+          <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)] lg:items-center">
+            <ActorSpotlight actor={game.startActor} label="Start" tone="gold" />
+
+            <div className="flex flex-col items-center gap-4">
+              <div className="hidden h-px w-full bg-gradient-to-r from-transparent via-cinema-gold/70 to-transparent lg:block" />
+              <motion.div
+                animate={isWon ? { scale: [1, 1.08, 1] } : { x: [0, 8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="flex h-16 w-16 items-center justify-center rounded-full border border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold"
+              >
+                {isWon ? <Sparkles className="h-8 w-8" /> : <ArrowRight className="h-8 w-8" />}
+              </motion.div>
+              <div className="rounded-lg border border-cinema-gold/20 bg-black/20 px-4 py-2 text-center">
+                <p className="section-title">Your Path</p>
+                <p className="mt-1 text-sm text-gray-400">{game.moves.length} nodes placed</p>
               </div>
-              <p className="text-xs text-gray-400">Start</p>
+              <div className="hidden h-px w-full bg-gradient-to-r from-transparent via-cinema-red-light/50 to-transparent lg:block" />
             </div>
-            <div className="flex-1 mx-4 flex items-center justify-center">
-              <div className="h-0.5 bg-gradient-to-r from-cinema-gold via-cinema-red-light to-cinema-gold flex-1" />
-              <ArrowRight className="w-5 h-5 text-cinema-gold mx-2" />
-              <div className="h-0.5 bg-gradient-to-r from-cinema-gold via-cinema-red-light to-cinema-gold flex-1" />
+
+            <ActorSpotlight actor={game.targetActor} label="Target" tone="red" />
+          </div>
+        </section>
+
+        <section className="game-card mb-4 p-4 md:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="section-title">Your Path</p>
+              <h2 className="mt-1 text-xl font-bold text-white">Current connection rail</h2>
             </div>
-            <div className="text-center">
-              <div className="flex flex-col items-center mb-2">
-                <ActorAvatar url={game.targetActor.profileImageUrl} name={game.targetActor.name} size={56} />
-                <div className="node-actor inline-flex mt-2 border-cinema-red-light">
-                  <Star className="w-5 h-5 text-cinema-red-light" />
-                  <span className="font-bold">{game.targetActor.name}</span>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400">Target</p>
+            <div
+              className={`rounded-lg border px-3 py-2 text-sm font-bold ${
+                isMovieTurn
+                  ? 'border-cinema-red-light/40 bg-cinema-red/20 text-cinema-red-light'
+                  : 'border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold'
+              }`}
+            >
+              {turnLabel}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <AnimatePresence mode="popLayout">
-              {game.moves.map((move, index) => (
-                <motion.div
-                  key={move.id}
-                  layout
-                  initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                  transition={{ delay: index * 0.03 }}
-                  className={move.entityType === 'actor' ? 'node-actor' : 'node-movie'}
-                >
-                  {move.entityType === 'actor' ? (
-                    <>
-                      <ActorAvatar url={move.imageUrl} name={move.entityName} size={36} />
-                      <span className="font-medium">{move.entityName}</span>
-                    </>
-                  ) : (
-                    <>
-                      <MoviePoster url={move.imageUrl} title={move.entityName} size={36} />
-                      <span className="font-medium">{move.entityName}</span>
-                    </>
-                  )}
-                  <span className="ml-auto text-xs text-gray-400">#{index + 1}</span>
-                  {move.trivia && (
+          <div className="overflow-x-auto pb-2">
+            <div className="flex min-w-max items-center gap-3">
+              <AnimatePresence mode="popLayout">
+                {game.moves.map((move, index) => (
+                  <Fragment key={move.id}>
+                    <PathNode
+                      move={move}
+                      index={index}
+                      onTrivia={() =>
+                        setTriviaEntity({
+                          name: move.entityName,
+                          description: move.description,
+                          trivia: move.trivia,
+                        })
+                      }
+                    />
+                    {index < game.moves.length - 1 && <div className="timeline-connector" />}
+                  </Fragment>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {isWon && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={springPop}
+                className="win-burst mt-7 rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 p-6 text-center"
+              >
+                <Sparkles className="mx-auto mb-3 h-12 w-12 text-cinema-gold" />
+                <h2 className="gold-gradient mb-2 text-3xl font-bold md:text-4xl">Connection made</h2>
+                <p className="mx-auto max-w-2xl text-gray-300">
+                  You connected <span className="font-semibold text-cinema-gold">{game.startActor.name}</span> to{' '}
+                  <span className="font-semibold text-cinema-red-light">{game.targetActor.name}</span> in {game.movesCount} moves.
+                </p>
+                <div className="mt-5 text-5xl font-black text-cinema-gold">{game.score}</div>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  {showShare && (
                     <button
-                      onClick={() => setTriviaEntity({ name: move.entityName, description: move.description, trivia: move.trivia })}
-                      className="ml-2 text-cinema-gold hover:text-white"
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareText);
+                        toast.success('Copied to clipboard');
+                      }}
+                      className="btn-primary"
                     >
-                      <Info className="w-4 h-4" />
+                      <Share2 className="h-5 w-5" />
+                      Share Result
                     </button>
                   )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
-          {isWon && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-6 text-center p-6 bg-cinema-gold/10 rounded-xl border border-cinema-gold/30"
-            >
-              <Sparkles className="w-10 h-10 text-cinema-gold mx-auto mb-3" />
-              <h2 className="text-2xl font-bold gold-gradient mb-2">Congratulations!</h2>
-              <p className="text-gray-300 mb-4">
-                You connected {game.startActor.name} to {game.targetActor.name} in {game.movesCount} moves!
-              </p>
-              <div className="text-3xl font-bold text-cinema-gold mb-4">Score: {game.score}</div>
-              <div className="flex flex-wrap gap-3 justify-center">
-                {showShare && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(shareText);
-                      toast.success('Copied to clipboard!');
-                    }}
-                    className="btn-primary inline-flex items-center gap-2"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    Share Result
+                  <button onClick={handleNewGame} disabled={isProcessing} className="btn-primary">
+                    {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                    New Game
                   </button>
-                )}
-                <button
-                  onClick={handleNewGame}
-                  disabled={isProcessing}
-                  className="btn-primary inline-flex items-center gap-2 disabled:opacity-40"
-                >
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  New Game
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
 
         {!isWon && (
-          <>
-            <div className="relative mb-4">
+          <section className="command-panel p-4 md:p-5">
+            <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-center">
+              <div className="border-b border-cinema-600/40 pb-4 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4">
+                <p className={`text-xl font-bold ${isMovieTurn ? 'text-cinema-red-light' : 'text-cinema-gold'}`}>{turnLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-gray-400">{turnHelp}</p>
+              </div>
+
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={isMovieTurn ? 'Search for a movie...' : 'Search for an actor...'}
-                  className="search-input pl-10"
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={isMovieTurn ? 'Search for a movie' : 'Search for an actor'}
+                  className="search-input pl-12 text-base md:text-lg"
                 />
+                {searchQuery.length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={springFast}
+                    className="game-card absolute bottom-full z-50 mb-2 max-h-96 w-full overflow-auto"
+                  >
+                    <SearchResultsPanel
+                      results={searchResults}
+                      isSearching={isSearching}
+                      isMovieTurn={isMovieTurn}
+                      onMove={handleMove}
+                    />
+                  </motion.div>
+                )}
               </div>
-              {searchQuery.length >= 2 && (
-                <div className="absolute z-50 w-full mt-2 cinema-card max-h-80 overflow-auto">
-                  {isSearching ? (
-                    <div className="p-4 text-center text-gray-400">Searching...</div>
-                  ) : (
-                    <>
-                      {searchResults.actors.length > 0 && (
-                        <div className="p-2">
-                          <p className="text-xs text-gray-400 uppercase px-2 mb-1">Actors</p>
-                          {searchResults.actors.map((actor) => (
-                            <button
-                              key={actor.id}
-                              onClick={() => handleMove('actor', actor.id, actor.name)}
-                              disabled={isMovieTurn}
-                              className="w-full text-left px-3 py-2 hover:bg-cinema-700 rounded-lg flex items-center gap-3 disabled:opacity-30"
-                            >
-                              <ActorAvatar url={actor.profileImageUrl} name={actor.name} size={32} />
-                              <div className="flex-1 min-w-0">
-                                <span className="block">{actor.name}</span>
-                                {actor.description && (
-                                  <span className="text-xs text-gray-400 line-clamp-1">{actor.description}</span>
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {searchResults.movies.length > 0 && (
-                        <div className="p-2">
-                          <p className="text-xs text-gray-400 uppercase px-2 mb-1">Movies</p>
-                          {searchResults.movies.map((movie) => (
-                            <button
-                              key={movie.id}
-                              onClick={() => handleMove('movie', movie.id, movie.title)}
-                              disabled={!isMovieTurn}
-                              className="w-full text-left px-3 py-2 hover:bg-cinema-700 rounded-lg flex items-center gap-3 disabled:opacity-30"
-                            >
-                              <MoviePoster url={movie.posterUrl} title={movie.title} size={36} />
-                              <div className="flex-1 min-w-0">
-                                <span className="block">{movie.title}</span>
-                                <span className="text-xs text-gray-400">{movie.releaseYear} · {movie.genre}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {searchResults.actors.length === 0 && searchResults.movies.length === 0 && (
-                        <div className="p-4 text-center text-gray-400">No results found</div>
-                      )}
-                    </>
-                  )}
+
+              <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+                <CommandButton
+                  icon={isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+                  label="Undo"
+                  onClick={handleUndo}
+                  disabled={isProcessing || game.moves.length <= 1}
+                />
+                <CommandButton
+                  icon={isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                  label="Reset"
+                  onClick={handleReset}
+                  disabled={isProcessing}
+                  danger
+                />
+
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowHints((open) => !open)}
+                    className="btn-secondary min-w-[104px] px-4 py-3"
+                  >
+                    <Lightbulb className="h-4 w-4 text-cinema-teal" />
+                    Hints
+                    <ChevronDown className={`h-4 w-4 transition-transform ${showHints ? 'rotate-180' : ''}`} />
+                  </motion.button>
+                  <AnimatePresence>
+                    {showHints && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                        transition={springFast}
+                        className="game-card absolute right-0 z-50 mt-2 w-52 p-2"
+                      >
+                        {hintOptions.map((hint) => (
+                          <button
+                            key={hint.id}
+                            onClick={() => handleHint(hint.id)}
+                            className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm text-gray-200 transition-colors hover:bg-cinema-700/75 hover:text-white"
+                          >
+                            {hint.label}
+                            <Lightbulb className="h-4 w-4 text-cinema-teal" />
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              )}
+              </div>
             </div>
-
-            <div className="flex flex-wrap gap-3 justify-center">
-              <button
-                onClick={handleUndo}
-                disabled={isProcessing || game.moves.length <= 1}
-                className="btn-secondary inline-flex items-center gap-2 disabled:opacity-40"
-              >
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
-                Undo
-              </button>
-              <button
-                onClick={handleReset}
-                disabled={isProcessing}
-                className="btn-secondary inline-flex items-center gap-2 disabled:opacity-40"
-              >
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                Reset
-              </button>
-              <button onClick={() => handleHint('soft')} className="btn-secondary inline-flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                Soft Hint
-              </button>
-              <button onClick={() => handleHint('first-letter')} className="btn-secondary inline-flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                First Letter
-              </button>
-              <button onClick={() => handleHint('decade')} className="btn-secondary inline-flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                Decade Hint
-              </button>
-              <button onClick={() => handleHint('best-next')} className="btn-secondary inline-flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                Best Next
-              </button>
-            </div>
-
-            {/* Turn indicator */}
-            <div className="text-center mt-4">
-              <span className="text-sm text-cinema-gold-light">
-                {isMovieTurn ? '🎬 Pick a movie' : '⭐ Pick an actor'}
-              </span>
-            </div>
-          </>
+          </section>
         )}
       </div>
     </div>
@@ -574,11 +887,19 @@ function PlayPageContent() {
 
 export default function PlayPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-cinema-gold animate-pulse text-xl">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center px-4">
+          <motion.div
+            animate={{ opacity: [0.45, 1, 0.45] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+            className="game-card px-6 py-5 text-lg font-bold text-cinema-gold"
+          >
+            Loading...
+          </motion.div>
+        </div>
+      }
+    >
       <PlayPageContent />
     </Suspense>
   );

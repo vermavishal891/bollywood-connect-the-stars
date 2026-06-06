@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Home, Trophy, Clock, Star, Film, Medal } from 'lucide-react';
+import { Clock, Film, Home, Loader2, Medal, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getLeaderboard } from '@/lib/api';
+
+const filters = ['all', 'easy', 'medium', 'hard', 'legend'];
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<any[]>([]);
@@ -14,6 +16,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const params = filter !== 'all' ? { difficulty: filter } : {};
+    setLoading(true);
     getLeaderboard(params)
       .then(setEntries)
       .catch((err) => toast.error(err.message))
@@ -21,84 +24,104 @@ export default function LeaderboardPage() {
   }, [filter]);
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="text-cinema-gold hover:text-white transition-colors">
-            <Home className="w-6 h-6" />
+    <div className="min-h-screen px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <Link href="/" className="icon-button" aria-label="Go home">
+            <Home className="h-5 w-5" />
           </Link>
-          <h1 className="text-2xl font-bold gold-gradient">Leaderboard</h1>
-          <div className="w-6" />
+          <div className="text-center">
+            <p className="section-title">High Scores</p>
+            <h1 className="mt-1 text-3xl font-bold text-white md:text-4xl">Leaderboard</h1>
+          </div>
+          <div className="h-11 w-11" />
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-6 justify-center">
-          {['all', 'easy', 'medium', 'hard', 'legend'].map((d) => (
+        <div className="mb-6 flex flex-wrap justify-center gap-2">
+          {filters.map((difficulty) => (
             <button
-              key={d}
-              onClick={() => setFilter(d)}
-              className={`px-4 py-2 rounded-lg capitalize transition-colors ${
-                filter === d
-                  ? 'bg-cinema-gold text-cinema-900 font-bold'
-                  : 'bg-cinema-700 text-white hover:bg-cinema-600'
+              key={difficulty}
+              onClick={() => setFilter(difficulty)}
+              className={`rounded-lg border px-4 py-2 text-sm font-semibold capitalize transition-all ${
+                filter === difficulty
+                  ? 'border-cinema-gold bg-cinema-gold text-cinema-900'
+                  : 'border-cinema-600/50 bg-black/20 text-gray-200 hover:border-cinema-gold/50 hover:text-white'
               }`}
             >
-              {d}
+              {difficulty}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="text-center text-cinema-gold animate-pulse">Loading...</div>
+          <div className="game-card flex items-center justify-center gap-3 p-8 text-cinema-gold">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="font-bold">Loading scores...</span>
+          </div>
         ) : entries.length === 0 ? (
-          <div className="cinema-card p-8 text-center text-gray-400">
-            <Trophy className="w-12 h-12 mx-auto mb-4 text-cinema-gold/50" />
-            <p>No entries yet. Be the first to play!</p>
+          <div className="game-card p-10 text-center">
+            <Trophy className="mx-auto mb-4 h-12 w-12 text-cinema-gold/50" />
+            <h2 className="text-xl font-bold text-white">No entries yet</h2>
+            <p className="mt-2 text-gray-400">Be the first player to claim this board.</p>
+            <Link href="/play" className="btn-primary mt-6">
+              Start Playing
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">
             {entries.map((entry, index) => (
               <motion.div
                 key={entry.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`cinema-card p-4 flex items-center gap-4 ${
-                  index < 3 ? 'border-cinema-gold/30' : ''
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+                className={`game-card grid gap-4 p-4 md:grid-cols-[72px_minmax(0,1fr)_auto] md:items-center ${
+                  index < 3 ? 'border-cinema-gold/40' : ''
                 }`}
               >
-                <div className="w-10 text-center">
-                  {index === 0 && <Medal className="w-8 h-8 text-yellow-400 mx-auto" />}
-                  {index === 1 && <Medal className="w-8 h-8 text-gray-300 mx-auto" />}
-                  {index === 2 && <Medal className="w-8 h-8 text-amber-600 mx-auto" />}
-                  {index > 2 && <span className="text-lg font-bold text-gray-400">#{index + 1}</span>}
+                <div className="flex items-center justify-start md:justify-center">
+                  {index < 3 ? (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold">
+                      <Medal className="h-7 w-7" />
+                    </div>
+                  ) : (
+                    <span className="text-lg font-black text-gray-400">#{index + 1}</span>
+                  )}
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{entry.playerName}</p>
-                  <p className="text-sm text-gray-400 flex items-center gap-2">
-                    <Star className="w-3 h-3" />
-                    {entry.startActor}
-                    <Film className="w-3 h-3" />
-                    {entry.targetActor}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-lg font-bold text-white">{entry.playerName}</p>
+                    <span className="rounded-md border border-cinema-600/50 bg-black/20 px-2 py-1 text-xs font-bold uppercase tracking-[0.16em] text-gray-400">
+                      {entry.difficulty}
+                    </span>
+                  </div>
+                  <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-400">
+                    <Star className="h-3.5 w-3.5 text-cinema-gold" />
+                    <span>{entry.startActor}</span>
+                    <Film className="h-3.5 w-3.5 text-cinema-red-light" />
+                    <span>{entry.targetActor}</span>
                   </p>
                 </div>
 
-                <div className="text-right text-sm">
-                  <div className="flex items-center gap-1 text-cinema-gold">
-                    <Trophy className="w-4 h-4" />
-                    <span className="font-bold">{entry.score}</span>
+                <div className="grid grid-cols-3 gap-2 text-sm md:min-w-[260px]">
+                  <div className="stat-pill justify-center">
+                    <Trophy className="h-4 w-4 text-cinema-gold" />
+                    <span className="font-bold text-white">{entry.score}</span>
                   </div>
-                  <div className="text-gray-400">
-                    {entry.movesCount} moves · {formatTime(entry.timeTaken)}
+                  <div className="stat-pill justify-center">
+                    <Film className="h-4 w-4 text-cinema-red-light" />
+                    <span>{entry.movesCount}</span>
                   </div>
-                  <div className="text-xs text-gray-500 capitalize">
-                    {entry.difficulty} · {entry.mode}
+                  <div className="stat-pill justify-center">
+                    <Clock className="h-4 w-4 text-cinema-teal" />
+                    <span>{formatTime(entry.timeTaken)}</span>
                   </div>
                 </div>
               </motion.div>

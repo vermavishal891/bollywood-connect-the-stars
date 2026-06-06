@@ -9,14 +9,15 @@ const config: Config = {
     extend: {
       colors: {
         cinema: {
-          900: '#0a0a0f',
-          800: '#12121a',
-          700: '#1a1a25',
-          600: '#252538',
+          900: '#08070a',
+          800: '#121017',
+          700: '#1c1820',
+          600: '#342b2d',
           gold: '#F08F00',
           'gold-light': '#FFA500',
-          red: '#8b0000',
-          'red-light': '#c0392b',
+          red: '#6f171a',
+          'red-light': '#ff6b67',
+          teal: '#6de4df',
         },
       },
       fontFamily: {

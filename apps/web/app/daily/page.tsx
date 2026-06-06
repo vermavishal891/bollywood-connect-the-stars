@@ -3,9 +3,38 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Calendar, Home, ArrowRight, Star, Clock } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, Home, Loader2, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getDailyChallenge } from '@/lib/api';
+
+function initials(name?: string) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function ActorToken({ name, imageUrl, mystery = false }: { name?: string; imageUrl?: string | null; mystery?: boolean }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center text-center">
+      {imageUrl && !mystery ? (
+        <img src={imageUrl} alt={name || 'Actor'} className="hero-avatar h-24 w-24 bg-cinema-700" />
+      ) : (
+        <div
+          className={`hero-avatar flex h-24 w-24 items-center justify-center bg-gradient-to-br from-cinema-700 to-cinema-900 text-2xl font-bold ${
+            mystery ? 'text-cinema-red-light' : 'text-cinema-gold'
+          }`}
+        >
+          {mystery ? '?' : initials(name)}
+        </div>
+      )}
+      <span className="mt-3 max-w-[180px] text-balance text-lg font-bold text-white">{mystery ? 'Mystery Target' : name}</span>
+    </div>
+  );
+}
 
 export default function DailyPage() {
   const [challenge, setChallenge] = useState<any>(null);
@@ -20,65 +49,81 @@ export default function DailyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-cinema-gold animate-pulse text-xl">Loading daily challenge...</div>
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="game-card flex items-center gap-3 px-6 py-5 text-cinema-gold">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="font-bold">Loading daily challenge...</span>
+        </div>
       </div>
     );
   }
 
+  const dateLabel = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="text-cinema-gold hover:text-white transition-colors">
-            <Home className="w-6 h-6" />
+    <div className="min-h-screen px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-8 flex items-center justify-between">
+          <Link href="/" className="icon-button" aria-label="Go home">
+            <Home className="h-5 w-5" />
           </Link>
-          <h1 className="text-2xl font-bold gold-gradient">Daily Challenge</h1>
-          <div className="w-6" />
+          <div className="text-center">
+            <p className="section-title">Daily Challenge</p>
+            <h1 className="mt-1 text-3xl font-bold text-white">{dateLabel}</h1>
+          </div>
+          <div className="h-11 w-11" />
         </div>
 
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="cinema-card p-8 text-center"
+          className="game-card overflow-hidden p-6 text-center md:p-8"
         >
-          <Calendar className="w-12 h-12 text-cinema-gold mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
-          <p className="text-gray-400 mb-6">Same puzzle for everyone. Can you solve it?</p>
+          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold">
+            <Calendar className="h-7 w-7" />
+          </div>
+
+          <h2 className="text-3xl font-bold text-white">One puzzle, everyone playing</h2>
+          <p className="mx-auto mt-3 max-w-xl text-gray-400">A fresh actor connection for the day, with the target hidden until you solve the route.</p>
 
           {challenge && (
             <>
-              <div className="flex items-center justify-center gap-4 mb-8">
-                <div className="flex flex-col items-center">
-                  {challenge.startActor?.profileImageUrl && (
-                    <img src={challenge.startActor.profileImageUrl} alt={challenge.startActor.name} className="w-14 h-14 rounded-full object-cover border-2 border-cinema-gold mb-2" />
-                  )}
-                  <div className="node-actor">
-                    <Star className="w-5 h-5 text-cinema-gold" />
-                    <span className="font-bold">{challenge.startActor?.name || 'Loading...'}</span>
-                  </div>
+              <div className="my-8 grid items-center gap-5 sm:grid-cols-[1fr_auto_1fr]">
+                <ActorToken name={challenge.startActor?.name} imageUrl={challenge.startActor?.profileImageUrl} />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-cinema-gold/40 bg-black/30 text-cinema-gold">
+                  <ArrowRight className="h-6 w-6" />
                 </div>
-                <ArrowRight className="w-6 h-6 text-cinema-gold" />
-                <div className="node-actor border-cinema-red-light">
-                  <Star className="w-5 h-5 text-cinema-red-light" />
-                  <span className="font-bold">???</span>
-                </div>
+                <ActorToken mystery />
               </div>
 
               {challenge.description && (
-                <p className="text-sm text-gray-300 mb-6 italic">{challenge.description}</p>
+                <p className="mx-auto mb-6 max-w-2xl rounded-lg border border-cinema-600/40 bg-black/20 px-4 py-3 text-sm leading-6 text-gray-300">
+                  {challenge.description}
+                </p>
               )}
 
-              <Link
-                href={`/play?mode=daily&difficulty=${challenge.difficulty}`}
-                className="btn-primary inline-flex items-center gap-2 text-lg"
-              >
-                <Clock className="w-5 h-5" />
+              <div className="mb-7 flex flex-wrap justify-center gap-2">
+                <div className="stat-pill">
+                  <Star className="h-4 w-4 text-cinema-gold" />
+                  <span className="capitalize">{challenge.difficulty}</span>
+                </div>
+                <div className="stat-pill">
+                  <Trophy className="h-4 w-4 text-cinema-teal" />
+                  <span>Daily board</span>
+                </div>
+              </div>
+
+              <Link href={`/play?mode=daily&difficulty=${challenge.difficulty}`} className="btn-primary text-base">
+                <Clock className="h-5 w-5" />
                 Play Daily Challenge
               </Link>
             </>
           )}
-        </motion.div>
+        </motion.section>
       </div>
     </div>
   );

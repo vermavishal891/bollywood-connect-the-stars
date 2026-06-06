@@ -2,131 +2,130 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Film, Trophy, Lightbulb, Undo2, RotateCcw, Share2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Film, Lightbulb, RotateCcw, Share2, Star, Trophy, Undo2 } from 'lucide-react';
 
 export default function HowToPlayPage() {
   const steps = [
     {
-      icon: <Star className="w-8 h-8 text-cinema-gold" />,
+      icon: <Star className="h-8 w-8 text-cinema-gold" />,
       title: 'Start',
-      description: 'Each game gives you two Bollywood actors - a starting actor and a target actor.',
+      description: 'Each game gives you a starting actor and a target actor.',
     },
     {
-      icon: <Film className="w-8 h-8 text-cinema-red-light" />,
+      icon: <Film className="h-8 w-8 text-cinema-red-light" />,
       title: 'Connect',
-      description: 'Find a movie the current actor starred in, then pick a co-actor from that movie. Keep alternating between movies and actors.',
+      description: 'Pick a movie the current actor starred in, then pick a co-actor from that movie.',
     },
     {
-      icon: <Trophy className="w-8 h-8 text-cinema-gold" />,
+      icon: <Trophy className="h-8 w-8 text-cinema-gold" />,
       title: 'Win',
-      description: 'Reach the target actor! Fewer moves and less time means a higher score.',
+      description: 'Reach the target actor with fewer moves and less time for a higher score.',
     },
   ];
 
   const features = [
     {
-      icon: <Lightbulb className="w-6 h-6" />,
+      icon: <Lightbulb className="h-6 w-6" />,
       title: 'Hints',
-      description: 'Stuck? Use soft clues, first-letter hints, decade clues, or reveal the best next step.',
+      description: 'Use soft clues, first-letter hints, decade clues, or a best-next reveal.',
     },
     {
-      icon: <Undo2 className="w-6 h-6" />,
+      icon: <Undo2 className="h-6 w-6" />,
       title: 'Undo',
-      description: 'Made a wrong move? Undo and try a different path.',
+      description: 'Step back from a wrong route and try another connection.',
     },
     {
-      icon: <RotateCcw className="w-6 h-6" />,
+      icon: <RotateCcw className="h-6 w-6" />,
       title: 'Reset',
-      description: 'Start fresh anytime with the same actor pair.',
+      description: 'Restart the same actor pair without changing the puzzle.',
     },
     {
-      icon: <Share2 className="w-6 h-6" />,
+      icon: <Share2 className="h-6 w-6" />,
       title: 'Share',
-      description: 'Challenge friends by sharing your path and score.',
+      description: 'Copy your final path and challenge friends to beat your result.',
     },
   ];
 
   return (
-    <div className="min-h-screen px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-cinema-gold hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-4xl">
+        <Link href="/" className="mb-7 inline-flex items-center gap-2 text-cinema-gold transition-colors hover:text-white">
+          <ArrowLeft className="h-5 w-5" />
           Back to Home
         </Link>
 
-        <h1 className="text-4xl font-display font-bold mb-4 gold-gradient">How to Play</h1>
-        <p className="text-gray-400 mb-10 text-lg">
-          Bollywood Connect is a trivia game where you link two Indian film stars through their shared movies.
-        </p>
-
-        <div className="space-y-6 mb-12">
-          {steps.map((step, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.2 }}
-              className="cinema-card p-6 flex items-start gap-4"
-            >
-              <div className="shrink-0 w-12 h-12 bg-cinema-700 rounded-full flex items-center justify-center">
-                {step.icon}
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-1">
-                  {index + 1}. {step.title}
-                </h3>
-                <p className="text-gray-400">{step.description}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="cinema-card p-6 mb-12">
-          <h2 className="text-2xl font-bold mb-4 gold-gradient">Example Path</h2>
-          <div className="flex flex-wrap items-center gap-3 text-lg">
-            <span className="node-actor inline-flex">
-              <Star className="w-4 h-4 text-cinema-gold" />
-              Shah Rukh Khan
-            </span>
-            <ArrowLeft className="w-4 h-4 rotate-180 text-gray-500" />
-            <span className="node-movie inline-flex">
-              <Film className="w-4 h-4 text-cinema-red-light" />
-              Dear Zindagi
-            </span>
-            <ArrowLeft className="w-4 h-4 rotate-180 text-gray-500" />
-            <span className="node-actor inline-flex">
-              <Star className="w-4 h-4 text-cinema-gold" />
-              Alia Bhatt
-            </span>
-          </div>
-          <p className="text-sm text-gray-400 mt-3">
-            SRK starred in Dear Zindagi with Alia Bhatt — a direct 1-move connection!
+        <div className="mb-10">
+          <p className="section-title">Rules</p>
+          <h1 className="mt-2 text-4xl font-bold text-white md:text-5xl">How to Play</h1>
+          <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-400">
+            Link two Indian film stars through movies they share. The path alternates actor, movie, actor until the target is reached.
           </p>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4 gold-gradient">Features</h2>
-        <div className="grid sm:grid-cols-2 gap-4 mb-12">
-          {features.map((feature, index) => (
+        <div className="mb-12 grid gap-4 md:grid-cols-3">
+          {steps.map((step, index) => (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
+              key={step.title}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + index * 0.1 }}
+              transition={{ delay: index * 0.08 }}
               className="cinema-card p-5"
             >
-              <div className="text-cinema-gold mb-3">{feature.icon}</div>
-              <h3 className="font-bold mb-1">{feature.title}</h3>
-              <p className="text-sm text-gray-400">{feature.description}</p>
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg border border-cinema-gold/30 bg-cinema-gold/10">
+                {step.icon}
+              </div>
+              <span className="section-title">Step {index + 1}</span>
+              <h3 className="mt-2 text-xl font-bold text-white">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-gray-400">{step.description}</p>
             </motion.div>
           ))}
         </div>
 
+        <section className="game-card mb-12 p-6">
+          <p className="section-title">Example Path</p>
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-base">
+            <span className="node-actor">
+              <Star className="h-4 w-4 fill-current text-cinema-gold" />
+              Shah Rukh Khan
+            </span>
+            <ArrowRight className="h-5 w-5 text-gray-500" />
+            <span className="node-movie">
+              <Film className="h-4 w-4 text-cinema-red-light" />
+              Dear Zindagi
+            </span>
+            <ArrowRight className="h-5 w-5 text-gray-500" />
+            <span className="node-actor">
+              <Star className="h-4 w-4 fill-current text-cinema-gold" />
+              Alia Bhatt
+            </span>
+          </div>
+          <p className="mt-4 text-sm text-gray-400">
+            Shah Rukh Khan starred in Dear Zindagi with Alia Bhatt, creating a direct connection.
+          </p>
+        </section>
+
+        <section className="mb-12">
+          <p className="section-title">Controls</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 + index * 0.06 }}
+                className="cinema-card p-5"
+              >
+                <div className="mb-3 text-cinema-gold">{feature.icon}</div>
+                <h3 className="font-bold text-white">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-gray-400">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         <div className="text-center">
-          <Link href="/modes" className="btn-primary text-lg inline-flex items-center gap-2">
-            <Trophy className="w-5 h-5" />
+          <Link href="/modes" className="btn-primary text-base">
+            <Trophy className="h-5 w-5" />
             Start Playing
           </Link>
         </div>
