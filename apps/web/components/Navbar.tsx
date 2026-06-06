@@ -26,7 +26,7 @@ export default function Navbar() {
             <Film className="h-5 w-5 transition-transform group-hover:rotate-12" />
           </span>
           <span className="hidden font-display text-xl font-bold leading-none sm:inline">
-            <span className="text-cinema-red-light">Bollywood</span>{' '}
+            <span className="text-cinema-gold">Bollywood</span>{' '}
             <span className="text-cinema-gold">Connect</span>
           </span>
           <span className="sr-only">
