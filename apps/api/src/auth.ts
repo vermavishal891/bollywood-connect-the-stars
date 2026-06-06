@@ -107,6 +107,28 @@ export async function optionalAuthHook(request: FastifyRequest) {
   }
 }
 
+const ADMIN_EMAILS = ['vermavishal891@gmail.com'];
+
+export async function adminHook(request: FastifyRequest, reply: FastifyReply) {
+  const authHeader = request.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return reply.status(401).send({ error: 'Unauthorized' });
+  }
+
+  const token = authHeader.slice(7);
+  let user: AuthUser;
+  try {
+    user = verifyToken(token);
+    request.user = user;
+  } catch {
+    return reply.status(401).send({ error: 'Invalid token' });
+  }
+
+  if (!ADMIN_EMAILS.includes(user.email)) {
+    return reply.status(403).send({ error: 'Forbidden: Admin access only' });
+  }
+}
+
 /**
  * Find or create a user from Google OAuth payload
  */

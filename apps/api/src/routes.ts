@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@bollywood-connect/db';
 import { calculateScore, normalizeText, Difficulty } from '@bollywood-connect/shared';
 import { buildGraph, findShortestPath, isValidMove, generatePair, getHint, isQualifiedStartActor } from './game-engine';
-import { registerAuthRoutes, optionalAuthHook } from './auth';
+import { registerAuthRoutes, optionalAuthHook, adminHook } from './auth';
 
 function normalize(value: string) {
   return normalizeText(value);
@@ -394,180 +394,182 @@ export async function registerRoutes(app: FastifyInstance) {
     return { game };
   });
 
-  // Admin stats
-  app.get('/admin/stats', async () => {
-    const [
-      totalActors,
-      totalMovies,
-      totalGames,
-      totalPlayers,
-      pendingModerations,
-    ] = await Promise.all([
-      prisma.actor.count(),
-      prisma.movie.count(),
-      prisma.game.count(),
-      prisma.game.groupBy({ by: ['playerId'] }).then((r) => r.length),
-      prisma.moderationQueue.count({ where: { status: 'pending' } }),
-    ]);
+  // ===== ADMIN ROUTES (protected by adminHook) =====
+  app.register(async (adminApp) => {
+    adminApp.addHook('onRequest', adminHook);
 
-    return {
-      totalActors,
-      totalMovies,
-      totalGames,
-      totalPlayers,
-      pendingModerations,
-    };
-  });
+    // Admin stats
+    adminApp.get('/stats', async () => {
+      const [
+        totalActors,
+        totalMovies,
+        totalGames,
+        totalPlayers,
+        pendingModerations,
+      ] = await Promise.all([
+        prisma.actor.count(),
+        prisma.movie.count(),
+        prisma.game.count(),
+        prisma.game.groupBy({ by: ['playerId'] }).then((r) => r.length),
+        prisma.moderationQueue.count({ where: { status: 'pending' } }),
+      ]);
 
-  // Admin moderation queue
-  app.get('/admin/moderation', async () => {
-    return prisma.moderationQueue.findMany({
-      where: { status: 'pending' },
-      orderBy: { createdAt: 'desc' },
+      return {
+        totalActors,
+        totalMovies,
+        totalGames,
+        totalPlayers,
+        pendingModerations,
+      };
     });
-  });
 
-  // Get all actors (for admin)
-  app.get('/admin/actors', async (request) => {
-    const { skip = '0', take = '50' } = request.query as { skip?: string; take?: string };
-    return prisma.actor.findMany({
-      skip: parseInt(skip),
-      take: parseInt(take),
-      orderBy: { popularityScore: 'desc' },
+    // Admin moderation queue
+    adminApp.get('/moderation', async () => {
+      return prisma.moderationQueue.findMany({
+        where: { status: 'pending' },
+        orderBy: { createdAt: 'desc' },
+      });
     });
-  });
 
-  // Get all movies (for admin)
-  app.get('/admin/movies', async (request) => {
-    const { skip = '0', take = '50' } = request.query as { skip?: string; take?: string };
-    return prisma.movie.findMany({
-      skip: parseInt(skip),
-      take: parseInt(take),
-      orderBy: { releaseYear: 'desc' },
+    // Get all actors (for admin)
+    adminApp.get('/actors', async (request) => {
+      const { skip = '0', take = '50' } = request.query as { skip?: string; take?: string };
+      return prisma.actor.findMany({
+        skip: parseInt(skip),
+        take: parseInt(take),
+        orderBy: { popularityScore: 'desc' },
+      });
     });
-  });
 
-  // ===== TMDB INGESTION ENDPOINTS =====
+    // Get all movies (for admin)
+    adminApp.get('/movies', async (request) => {
+      const { skip = '0', take = '50' } = request.query as { skip?: string; take?: string };
+      return prisma.movie.findMany({
+        skip: parseInt(skip),
+        take: parseInt(take),
+        orderBy: { releaseYear: 'desc' },
+      });
+    });
 
-  // Check TMDB connection
-  app.get('/admin/tmdb/status', async () => {
-    const { checkTMDBConnection } = await import('./ingestion.js');
-    return checkTMDBConnection();
-  });
+    // ===== TMDB INGESTION ENDPOINTS =====
 
-  // Start full TMDB ingestion
-  app.post('/admin/tmdb/ingest', async (request, reply) => {
-    const { ingestBollywoodFromTMDB } = await import('./ingestion.js');
-    const body = request.body as {
-      actorCount?: number;
-      moviePages?: number;
-      includeRegional?: boolean;
-    };
+    // Check TMDB connection
+    adminApp.get('/tmdb/status', async () => {
+      const { checkTMDBConnection } = await import('./ingestion.js');
+      return checkTMDBConnection();
+    });
 
-    // Run ingestion asynchronously and return job ID
-    const jobId = `ingest-${Date.now()}`;
-    reply.send({ jobId, status: 'started', message: 'Ingestion started in background' });
+    // Start full TMDB ingestion
+    adminApp.post('/tmdb/ingest', async (request, reply) => {
+      const { ingestBollywoodFromTMDB } = await import('./ingestion.js');
+      const body = request.body as {
+        actorCount?: number;
+        moviePages?: number;
+        includeRegional?: boolean;
+      };
 
-    try {
-      const result = await ingestBollywoodFromTMDB(body);
-      console.log(`[${jobId}] Ingestion complete:`, result);
-    } catch (err: any) {
-      console.error(`[${jobId}] Ingestion failed:`, err.message);
-    }
-  });
+      const jobId = `ingest-${Date.now()}`;
+      reply.send({ jobId, status: 'started', message: 'Ingestion started in background' });
 
-  // Refresh all TMDB data (wipe and re-ingest)
-  app.post('/admin/tmdb/refresh', async (request, reply) => {
-    const { refreshTMDBData } = await import('./ingestion.js');
-    const body = request.body as {
-      actorCount?: number;
-      moviePages?: number;
-      includeRegional?: boolean;
-    };
+      try {
+        const result = await ingestBollywoodFromTMDB(body);
+        console.log(`[${jobId}] Ingestion complete:`, result);
+      } catch (err: any) {
+        console.error(`[${jobId}] Ingestion failed:`, err.message);
+      }
+    });
 
-    const jobId = `refresh-${Date.now()}`;
-    reply.send({ jobId, status: 'started', message: 'Refresh started in background' });
+    // Refresh all TMDB data
+    adminApp.post('/tmdb/refresh', async (request, reply) => {
+      const { refreshTMDBData } = await import('./ingestion.js');
+      const body = request.body as {
+        actorCount?: number;
+        moviePages?: number;
+        includeRegional?: boolean;
+      };
 
-    try {
-      const result = await refreshTMDBData(body);
-      console.log(`[${jobId}] Refresh complete:`, result);
-    } catch (err: any) {
-      console.error(`[${jobId}] Refresh failed:`, err.message);
-    }
-  });
+      const jobId = `refresh-${Date.now()}`;
+      reply.send({ jobId, status: 'started', message: 'Refresh started in background' });
 
-  // ===== FULL TMDB INGESTION (Hindi only, all movies + actors) =====
+      try {
+        const result = await refreshTMDBData(body);
+        console.log(`[${jobId}] Refresh complete:`, result);
+      } catch (err: any) {
+        console.error(`[${jobId}] Refresh failed:`, err.message);
+      }
+    });
 
-  // Start full TMDB ingestion (Hindi movies + all actors from credits)
-  app.post('/admin/tmdb/full-ingest', async (request, reply) => {
-    const { runFullTMDBIngestion, resetCheckpoint } = await import('./tmdb-ingestion.js');
-    const body = request.body as { clearExisting?: boolean };
+    // Start full TMDB ingestion (Hindi movies + all actors)
+    adminApp.post('/tmdb/full-ingest', async (request, reply) => {
+      const { runFullTMDBIngestion, resetCheckpoint } = await import('./tmdb-ingestion.js');
+      const body = request.body as { clearExisting?: boolean };
 
-    resetCheckpoint();
-    const jobId = `full-ingest-${Date.now()}`;
-    reply.send({ jobId, status: 'started', message: 'Full TMDB ingestion started. This may take 1-2 hours.' });
+      resetCheckpoint();
+      const jobId = `full-ingest-${Date.now()}`;
+      reply.send({ jobId, status: 'started', message: 'Full TMDB ingestion started. This may take 1-2 hours.' });
 
-    try {
-      const result = await runFullTMDBIngestion(
-        { clearExisting: body.clearExisting },
-        (msg: string) => console.log(`[${jobId}] ${msg}`)
-      );
-      console.log(`[${jobId}] Full ingestion complete:`, result);
-    } catch (err: any) {
-      console.error(`[${jobId}] Full ingestion failed:`, err.message);
-    }
-  });
+      try {
+        const result = await runFullTMDBIngestion(
+          { clearExisting: body.clearExisting },
+          (msg: string) => console.log(`[${jobId}] ${msg}`)
+        );
+        console.log(`[${jobId}] Full ingestion complete:`, result);
+      } catch (err: any) {
+        console.error(`[${jobId}] Full ingestion failed:`, err.message);
+      }
+    });
 
-  // Get full ingestion progress
-  app.get('/admin/tmdb/progress', async () => {
-    const { getProgress } = await import('./tmdb-ingestion.js');
-    return getProgress();
-  });
+    // Get full ingestion progress
+    adminApp.get('/tmdb/progress', async () => {
+      const { getProgress } = await import('./tmdb-ingestion.js');
+      return getProgress();
+    });
 
-  // Cancel running ingestion
-  app.post('/admin/tmdb/cancel', async () => {
-    const { cancelIngestion } = await import('./tmdb-ingestion.js');
-    cancelIngestion();
-    return { cancelled: true };
-  });
+    // Cancel running ingestion
+    adminApp.post('/tmdb/cancel', async () => {
+      const { cancelIngestion } = await import('./tmdb-ingestion.js');
+      cancelIngestion();
+      return { cancelled: true };
+    });
 
-  // Reset checkpoint
-  app.post('/admin/tmdb/reset', async () => {
-    const { resetCheckpoint } = await import('./tmdb-ingestion.js');
-    resetCheckpoint();
-    return { reset: true };
-  });
+    // Reset checkpoint
+    adminApp.post('/tmdb/reset', async () => {
+      const { resetCheckpoint } = await import('./tmdb-ingestion.js');
+      resetCheckpoint();
+      return { reset: true };
+    });
 
-  // ===== WIKIPEDIA INGESTION ENDPOINTS (FREE ALTERNATIVE) =====
+    // ===== WIKIPEDIA INGESTION ENDPOINTS =====
 
-  // Check Wikipedia dataset status
-  app.get('/admin/wikipedia/status', async () => {
-    const { checkWikipediaStatus } = await import('./wikipedia-ingestion.js');
-    return checkWikipediaStatus();
-  });
+    // Check Wikipedia dataset status
+    adminApp.get('/wikipedia/status', async () => {
+      const { checkWikipediaStatus } = await import('./wikipedia-ingestion.js');
+      return checkWikipediaStatus();
+    });
 
-  // Ingest from pre-built Wikipedia dataset
-  app.post('/admin/wikipedia/ingest', async (request, reply) => {
-    const { ingestFromWikipediaDataset } = await import('./wikipedia-ingestion.js');
-    const body = request.body as { clearExisting?: boolean };
+    // Ingest from pre-built Wikipedia dataset
+    adminApp.post('/wikipedia/ingest', async (request, reply) => {
+      const { ingestFromWikipediaDataset } = await import('./wikipedia-ingestion.js');
+      const body = request.body as { clearExisting?: boolean };
 
-    const jobId = `wiki-ingest-${Date.now()}`;
-    reply.send({ jobId, status: 'started', message: 'Wikipedia ingestion started' });
+      const jobId = `wiki-ingest-${Date.now()}`;
+      reply.send({ jobId, status: 'started', message: 'Wikipedia ingestion started' });
 
-    try {
-      const result = await ingestFromWikipediaDataset({ clearExisting: body.clearExisting });
-      console.log(`[${jobId}] Wikipedia ingestion complete:`, result);
-    } catch (err: any) {
-      console.error(`[${jobId}] Wikipedia ingestion failed:`, err.message);
-    }
-  });
+      try {
+        const result = await ingestFromWikipediaDataset({ clearExisting: body.clearExisting });
+        console.log(`[${jobId}] Wikipedia ingestion complete:`, result);
+      } catch (err: any) {
+        console.error(`[${jobId}] Wikipedia ingestion failed:`, err.message);
+      }
+    });
 
-  // Run live Wikipedia scraper (background)
-  app.post('/admin/wikipedia/scrape', async (request, reply) => {
-    const { runWikipediaScraper } = await import('./wikipedia-ingestion.js');
-    const body = request.body as { years?: string };
+    // Run live Wikipedia scraper
+    adminApp.post('/wikipedia/scrape', async (request, reply) => {
+      const { runWikipediaScraper } = await import('./wikipedia-ingestion.js');
+      const body = request.body as { years?: string };
 
-    const result = await runWikipediaScraper(body.years);
-    return result;
-  });
+      const result = await runWikipediaScraper(body.years);
+      return result;
+    });
+  }, { prefix: '/admin' });
 }
