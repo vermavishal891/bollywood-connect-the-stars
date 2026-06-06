@@ -13,14 +13,14 @@ const config: Config = {
           800: '#12121a',
           700: '#1a1a25',
           600: '#252538',
-          gold: '#d4af37',
-          'gold-light': '#f4d03f',
+          gold: '#F08F00',
+          'gold-light': '#FFA500',
           red: '#8b0000',
           'red-light': '#c0392b',
         },
       },
       fontFamily: {
-        display: ['Georgia', 'Cambria', 'serif'],
+        display: ['"Abril Fatface"', 'Georgia', 'Cambria', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       animation: {

@@ -15,7 +15,7 @@
   }
   
   .cinema-glow {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15), 0 0 60px rgba(212, 175, 55, 0.05);
+    box-shadow: 0 0 20px rgba(240, 143, 0, 0.15), 0 0 60px rgba(240, 143, 0, 0.05);
   }
   
   .gold-gradient {
@@ -63,10 +63,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4af37;
+  background: #F08F00;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f4d03f;
+  background: #FFA500;
 }
