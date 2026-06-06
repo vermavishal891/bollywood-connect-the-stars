@@ -40,14 +40,16 @@ export default function GoogleLoginButton() {
   };
 
   return (
-    <GoogleLogin
-      onSuccess={handleSuccess}
-      onError={handleError}
-      useOneTap
-      theme="filled_black"
-      shape="pill"
-      size="medium"
-      text="signin_with"
-    />
+    <div className="overflow-hidden rounded-full">
+      <GoogleLogin
+        onSuccess={handleSuccess}
+        onError={handleError}
+        useOneTap
+        theme="filled_black"
+        shape="pill"
+        size="medium"
+        text="signin_with"
+      />
+    </div>
   );
 }
