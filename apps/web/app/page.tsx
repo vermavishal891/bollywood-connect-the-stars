@@ -72,7 +72,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-center">
           <div>
             <h1 className="font-display text-5xl font-bold leading-tight tracking-tight md:text-7xl">
-              <span className="text-cinema-red-light">Bollywood</span>
+              <span className="text-cinema-gold">Bollywood</span>
               <br />
               <span className="text-cinema-gold">Connect</span>
             </h1>
