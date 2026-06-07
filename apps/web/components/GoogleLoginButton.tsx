@@ -41,29 +41,17 @@ export default function GoogleLoginButton({ width }: { width?: string }) {
   };
 
   return (
-    <div className="relative h-10 overflow-hidden rounded-full" style={{ width: Number(buttonWidth) }}>
-      <button
-        type="button"
-        disabled
-        className="absolute inset-0 flex items-center gap-3 rounded-full border border-cinema-gold/15 bg-black/65 px-3 text-sm font-bold text-white"
-      >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-base font-black text-cinema-blue">
-          G
-        </span>
-        <span>Sign in with Google</span>
-      </button>
-      <div className="relative z-10">
-        <GoogleLogin
-          onSuccess={handleSuccess}
-          onError={handleError}
-          useOneTap
-          theme="filled_black"
-          shape="pill"
-          size="medium"
-          text="signin_with"
-          width={buttonWidth}
-        />
-      </div>
+    <div className="flex h-10 items-center justify-center overflow-hidden rounded-full" style={{ width: Number(buttonWidth) }}>
+      <GoogleLogin
+        onSuccess={handleSuccess}
+        onError={handleError}
+        useOneTap
+        theme="filled_black"
+        shape="pill"
+        size="medium"
+        text="signin_with"
+        width={buttonWidth}
+      />
     </div>
   );
 }

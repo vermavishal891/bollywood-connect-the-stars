@@ -118,8 +118,8 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-            <div className="mx-auto flex max-w-sm justify-end">
-              <GoogleLoginButton width="210" />
+            <div className="mx-auto flex max-w-sm justify-center">
+              <GoogleLoginButton width="240" />
             </div>
           )}
         </div>
