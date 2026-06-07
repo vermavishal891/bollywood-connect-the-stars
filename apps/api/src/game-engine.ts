@@ -1,32 +1,124 @@
 import { prisma } from '@bollywood-connect/db';
-import { Difficulty } from '@bollywood-connect/shared';
+import { calculateScore, Difficulty, GameMode, THEMES } from '@bollywood-connect/shared';
+import type { Prisma } from '@bollywood-connect/db';
 
 const MIN_HIGH_POP_MOVIES = 5;
 const MIN_MOVIE_POPULARITY = 3;
+const SUPPORTED_THEME_IDS = new Set(THEMES.map((theme) => theme.id));
 
 export interface GraphNode {
   type: 'actor' | 'movie';
   id: number;
 }
 
+export interface GraphBuildOptions {
+  region?: string;
+  theme?: string;
+}
+
+export interface GeneratedPuzzle {
+  startNode: GraphNode;
+  targetNode: GraphNode;
+  path: GraphNode[];
+  optimalMoves: number;
+  region?: string;
+  theme?: string;
+}
+
+export interface PathValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export interface ModeScoreInput {
+  mode: GameMode;
+  difficulty: Difficulty;
+  shortestEdges: number;
+  actualEdges: number;
+  timeTaken: number;
+  hintsUsed: number;
+  isPerfect?: boolean;
+}
+
+function createSeededRandom(seed: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index++) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return () => {
+    hash += hash << 13;
+    hash ^= hash >>> 7;
+    hash += hash << 3;
+    hash ^= hash >>> 17;
+    hash += hash << 5;
+    return ((hash >>> 0) % 1000000) / 1000000;
+  };
+}
+
+function pickRandom<T>(items: T[], random = Math.random): T | undefined {
+  if (items.length === 0) return undefined;
+  return items[Math.floor(random() * items.length)];
+}
+
+export function getThemeMovieWhere(theme?: string): Prisma.MovieWhereInput {
+  if (!theme) return {};
+
+  const config = THEMES.find((item) => item.id === theme);
+  if (!config || !SUPPORTED_THEME_IDS.has(theme)) {
+    return { id: -1 };
+  }
+
+  if (config.filter.decades) {
+    const [from, to] = config.filter.decades;
+    return { releaseYear: { gte: from, lte: to } };
+  }
+
+  if (config.filter.genres?.length) {
+    return {
+      OR: config.filter.genres.map((genre) => ({
+        genre: { contains: genre, mode: 'insensitive' as const },
+      })),
+    };
+  }
+
+  return { id: -1 };
+}
+
 // Build adjacency lists from database
-export async function buildGraph() {
-  const actors = await prisma.actor.findMany({
-    where: { isBollywood: true, isActive: true },
-    select: { id: true, popularityScore: true, knownForDepartment: true },
-  });
+export async function buildGraph(options: GraphBuildOptions = {}) {
+  const movieWhere: Prisma.MovieWhereInput = {
+    isBollywood: true,
+    ...(options.region ? { region: options.region } : {}),
+    ...getThemeMovieWhere(options.theme),
+  };
 
   const movies = await prisma.movie.findMany({
-    where: { isBollywood: true },
+    where: movieWhere,
     select: { id: true },
   });
 
-  const cast = await prisma.movieCast.findMany();
+  const movieIds = movies.map((movie) => movie.id);
+  if (movieIds.length === 0) {
+    return { actors: [], movies, actorToMovies: new Map<number, number[]>(), movieToActors: new Map<number, number[]>() };
+  }
 
+  const cast = await prisma.movieCast.findMany({
+    where: { movieId: { in: movieIds } },
+  });
+
+  const actorIds = [...new Set(cast.map((item) => item.actorId))];
+  const actors = await prisma.actor.findMany({
+    where: { id: { in: actorIds }, isBollywood: true, isActive: true },
+    select: { id: true, popularityScore: true, knownForDepartment: true },
+  });
+
+  const validActorIds = new Set(actors.map((actor) => actor.id));
   const actorToMovies = new Map<number, number[]>();
   const movieToActors = new Map<number, number[]>();
 
   for (const c of cast) {
+    if (!validActorIds.has(c.actorId)) continue;
     if (!actorToMovies.has(c.actorId)) actorToMovies.set(c.actorId, []);
     actorToMovies.get(c.actorId)!.push(c.movieId);
 
@@ -51,41 +143,25 @@ export function getNeighbors(
   }
 }
 
-export function findShortestPath(
-  startActorId: number,
-  targetActorId: number,
-  actorToMovies: Map<number, number[]>,
-  movieToActors: Map<number, number[]>
-): GraphNode[] | null {
-  return findShortestPathFromNode(
-    { type: 'actor', id: startActorId },
-    targetActorId,
-    actorToMovies,
-    movieToActors
-  );
-}
-
-export function findShortestPathFromNode(
+export function getShortestPath(
   start: GraphNode,
-  targetActorId: number,
+  target: GraphNode,
   actorToMovies: Map<number, number[]>,
   movieToActors: Map<number, number[]>,
   excluded?: Set<string>
 ): GraphNode[] | null {
   const queue: GraphNode[][] = [[start]];
-  const visited = new Set<string>();
-  visited.add(`${start.type}:${start.id}`);
+  const visited = new Set<string>([`${start.type}:${start.id}`]);
 
   while (queue.length > 0) {
     const path = queue.shift()!;
     const current = path[path.length - 1];
 
-    if (current.type === 'actor' && current.id === targetActorId) {
+    if (current.type === target.type && current.id === target.id) {
       return path;
     }
 
-    const neighbors = getNeighbors(current, actorToMovies, movieToActors);
-    for (const neighbor of neighbors) {
+    for (const neighbor of getNeighbors(current, actorToMovies, movieToActors)) {
       const key = `${neighbor.type}:${neighbor.id}`;
       if (visited.has(key)) continue;
       if (excluded?.has(key)) continue;
@@ -95,6 +171,80 @@ export function findShortestPathFromNode(
   }
 
   return null;
+}
+
+export function validatePath(
+  path: GraphNode[],
+  actorToMovies: Map<number, number[]>,
+  movieToActors: Map<number, number[]>
+): PathValidationResult {
+  if (path.length < 2) {
+    return { valid: false, error: 'Path must contain at least two nodes' };
+  }
+
+  const visited = new Set<string>();
+  for (let index = 0; index < path.length; index++) {
+    const current = path[index];
+    const key = `${current.type}:${current.id}`;
+    if (visited.has(key)) {
+      return { valid: false, error: 'Path cannot repeat nodes' };
+    }
+    visited.add(key);
+
+    if (index === 0) continue;
+    const previous = path[index - 1];
+    if (!isValidMove(previous, current, actorToMovies, movieToActors)) {
+      return { valid: false, error: 'Path contains an invalid connection' };
+    }
+  }
+
+  return { valid: true };
+}
+
+export function calculateModeScore(input: ModeScoreInput): number {
+  const base = calculateScore(
+    input.shortestEdges,
+    input.actualEdges,
+    input.timeTaken,
+    input.hintsUsed,
+    input.difficulty
+  );
+
+  const modeMultiplier: Record<GameMode, number> = {
+    classic: 1,
+    daily: 1.15,
+    speedrun: 1.2,
+    shortest: 1.25,
+    party: 1,
+    regional: 1.1,
+    'movie-to-movie': 1.15,
+    theme: 1.1,
+  };
+
+  const speedBonus = input.mode === 'speedrun' ? Math.max(0, 900 - input.timeTaken * 8) : 0;
+  const perfectBonus = input.isPerfect && input.mode === 'shortest' ? 650 : 0;
+  const dailyBonus = input.isPerfect && input.mode === 'daily' ? 150 : 0;
+
+  return Math.max(0, Math.floor(base * modeMultiplier[input.mode] + speedBonus + perfectBonus + dailyBonus));
+}
+
+export function findShortestPath(
+  startActorId: number,
+  targetActorId: number,
+  actorToMovies: Map<number, number[]>,
+  movieToActors: Map<number, number[]>
+): GraphNode[] | null {
+  return getShortestPath({ type: 'actor', id: startActorId }, { type: 'actor', id: targetActorId }, actorToMovies, movieToActors);
+}
+
+export function findShortestPathFromNode(
+  start: GraphNode,
+  targetActorId: number,
+  actorToMovies: Map<number, number[]>,
+  movieToActors: Map<number, number[]>,
+  excluded?: Set<string>
+): GraphNode[] | null {
+  return getShortestPath(start, { type: 'actor', id: targetActorId }, actorToMovies, movieToActors, excluded);
 }
 
 export function isValidMove(
@@ -130,6 +280,11 @@ export async function getQualifiedActorPool() {
     popularityScore: r.popularityScore,
     knownForDepartment: r.knownForDepartment,
   }));
+}
+
+export async function getCandidateActorPool(options: GraphBuildOptions = {}) {
+  const { actors, actorToMovies } = await buildGraph(options);
+  return actors.filter((actor) => (actorToMovies.get(actor.id)?.length || 0) > 0);
 }
 
 export async function isQualifiedStartActor(actorId: number): Promise<boolean> {
@@ -223,6 +378,150 @@ export async function generatePair(difficulty: Difficulty) {
   throw new Error('Could not find any valid actor pair for this difficulty');
 }
 
+function edgeCount(path: GraphNode[]) {
+  return Math.max(0, path.length - 1);
+}
+
+async function generateActorPuzzle(
+  difficulty: Difficulty,
+  options: GraphBuildOptions = {},
+  seed?: string
+): Promise<GeneratedPuzzle> {
+  if (!options.region && !options.theme && !seed) {
+    const pair = await generatePair(difficulty);
+    return {
+      startNode: { type: 'actor', id: pair.startActorId },
+      targetNode: { type: 'actor', id: pair.targetActorId },
+      path: pair.path,
+      optimalMoves: edgeCount(pair.path),
+      region: options.region,
+      theme: options.theme,
+    };
+  }
+
+  const { actors, actorToMovies, movieToActors } = await buildGraph(options);
+  const pool = actors.filter((actor) => (actorToMovies.get(actor.id)?.length || 0) > 0);
+  if (pool.length < 2) {
+    throw new Error('Not enough data yet to generate this mode. Try Hindi / Bollywood or Classic mode.');
+  }
+
+  const random = seed ? createSeededRandom(seed) : Math.random;
+  const minEdges = { easy: 2, medium: 4, hard: 6, legend: 8 }[difficulty];
+  const maxEdges = { easy: 6, medium: 10, hard: 14, legend: 24 }[difficulty];
+
+  for (let attempt = 0; attempt < 2000; attempt++) {
+    const start = pickRandom(pool, random);
+    const target = pickRandom(pool, random);
+    if (!start || !target || start.id === target.id) continue;
+
+    const path = getShortestPath(
+      { type: 'actor', id: start.id },
+      { type: 'actor', id: target.id },
+      actorToMovies,
+      movieToActors
+    );
+    if (!path) continue;
+    const edges = edgeCount(path);
+    if (edges >= minEdges && edges <= maxEdges) {
+      return {
+        startNode: { type: 'actor', id: start.id },
+        targetNode: { type: 'actor', id: target.id },
+        path,
+        optimalMoves: edges,
+        region: options.region,
+        theme: options.theme,
+      };
+    }
+  }
+
+  for (let i = 0; i < pool.length; i++) {
+    for (let j = i + 1; j < pool.length; j++) {
+      const path = getShortestPath(
+        { type: 'actor', id: pool[i].id },
+        { type: 'actor', id: pool[j].id },
+        actorToMovies,
+        movieToActors
+      );
+      if (path) {
+        return {
+          startNode: { type: 'actor', id: pool[i].id },
+          targetNode: { type: 'actor', id: pool[j].id },
+          path,
+          optimalMoves: edgeCount(path),
+          region: options.region,
+          theme: options.theme,
+        };
+      }
+    }
+  }
+
+  throw new Error('Could not find a valid connection for this mode yet.');
+}
+
+async function generateMoviePuzzle(
+  difficulty: Difficulty,
+  options: GraphBuildOptions = {},
+  seed?: string
+): Promise<GeneratedPuzzle> {
+  const { movies, actorToMovies, movieToActors } = await buildGraph(options);
+  const pool = movies.filter((movie) => (movieToActors.get(movie.id)?.length || 0) > 0);
+  if (pool.length < 2) {
+    throw new Error('Not enough movie data yet to generate Movie-to-Movie mode.');
+  }
+
+  const random = seed ? createSeededRandom(seed) : Math.random;
+  for (let attempt = 0; attempt < 2000; attempt++) {
+    const start = pickRandom(pool, random);
+    const target = pickRandom(pool, random);
+    if (!start || !target || start.id === target.id) continue;
+    const path = getShortestPath(
+      { type: 'movie', id: start.id },
+      { type: 'movie', id: target.id },
+      actorToMovies,
+      movieToActors
+    );
+    if (!path) continue;
+    return {
+      startNode: { type: 'movie', id: start.id },
+      targetNode: { type: 'movie', id: target.id },
+      path,
+      optimalMoves: edgeCount(path),
+      region: options.region,
+      theme: options.theme,
+    };
+  }
+
+  throw new Error('Could not find a valid movie-to-movie puzzle.');
+}
+
+export async function generatePuzzleByMode({
+  mode,
+  difficulty,
+  region,
+  theme,
+  seed,
+}: {
+  mode: GameMode;
+  difficulty: Difficulty;
+  region?: string;
+  theme?: string;
+  seed?: string;
+}): Promise<GeneratedPuzzle> {
+  if (mode === 'movie-to-movie') {
+    return generateMoviePuzzle(difficulty, { region, theme }, seed);
+  }
+
+  if (mode === 'regional') {
+    return generateActorPuzzle(difficulty, { region: region || 'hindi' }, seed);
+  }
+
+  if (mode === 'theme') {
+    return generateActorPuzzle(difficulty, { theme }, seed);
+  }
+
+  return generateActorPuzzle(difficulty, {}, seed);
+}
+
 export async function getHint(
   gameId: string,
   hintType: string
@@ -234,13 +533,24 @@ export async function getHint(
 
   if (!game || game.status !== 'active') return null;
 
-  const { actorToMovies, movieToActors } = await buildGraph();
+  const { actorToMovies, movieToActors } = await buildGraph({ region: game.region || undefined, theme: game.theme || undefined });
+  const targetNode: GraphNode | null = game.targetMovieId
+    ? { type: 'movie', id: game.targetMovieId }
+    : game.targetActorId
+      ? { type: 'actor', id: game.targetActorId }
+      : null;
+
+  if (!targetNode) return null;
 
   // Get current position
   const lastMove = game.moves[game.moves.length - 1];
   const currentNode: GraphNode = lastMove
     ? { type: lastMove.entityType as 'actor' | 'movie', id: lastMove.entityId }
-    : { type: 'actor', id: game.startActorId };
+    : game.startMovieId
+      ? { type: 'movie', id: game.startMovieId }
+      : game.startActorId
+        ? { type: 'actor', id: game.startActorId }
+        : targetNode;
 
   // Build set of already-visited nodes so we don't suggest revisiting them
   const excluded = new Set<string>();
@@ -249,13 +559,7 @@ export async function getHint(
   }
 
   // Find shortest path from current position to target, excluding visited nodes
-  const path = findShortestPathFromNode(
-    currentNode,
-    game.targetActorId,
-    actorToMovies,
-    movieToActors,
-    excluded
-  );
+  const path = getShortestPath(currentNode, targetNode, actorToMovies, movieToActors, excluded);
 
   if (!path) return null;
 

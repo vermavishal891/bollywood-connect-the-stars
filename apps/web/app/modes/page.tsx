@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { DIFFICULTIES, GAME_MODES, REGIONS, THEMES } from '@bollywood-connect/shared';
+import { getRegions } from '@/lib/api';
 
 const modeIcons: Record<string, ReactNode> = {
   classic: <Star className="h-7 w-7" />,
@@ -35,6 +36,14 @@ const difficultyStrength: Record<string, number> = {
   legend: 4,
 };
 
+function getModeHref(modeId: string) {
+  if (modeId === 'daily') return '/daily';
+  if (modeId === 'party') return '/party';
+  if (modeId === 'regional') return '/play?mode=regional&region=hindi&difficulty=medium';
+  if (modeId === 'theme') return '/play?mode=theme&theme=romance&difficulty=medium';
+  return `/play?mode=${modeId}&difficulty=medium`;
+}
+
 function DifficultyMarks({ level }: { level: string }) {
   const count = difficultyStrength[level] || 1;
   return (
@@ -47,6 +56,16 @@ function DifficultyMarks({ level }: { level: string }) {
 }
 
 export default function ModesPage() {
+  const [availableRegionIds, setAvailableRegionIds] = useState<Set<string>>(new Set(['hindi']));
+
+  useEffect(() => {
+    getRegions()
+      .then((regions) => {
+        setAvailableRegionIds(new Set(regions.filter((region: any) => region.available).map((region: any) => region.id)));
+      })
+      .catch(() => setAvailableRegionIds(new Set(['hindi'])));
+  }, []);
+
   return (
     <div className="cinematic-page">
       <div className="mx-auto max-w-7xl">
@@ -78,7 +97,10 @@ export default function ModesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
             >
-              <Link href={`/play?mode=${mode.id}&difficulty=medium`} className="mode-card group block h-full">
+              <Link
+                href={getModeHref(mode.id)}
+                className="mode-card group block h-full"
+              >
                 <div className="mb-7 flex items-start justify-between gap-4">
                   <span className="flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
                     {modeIcons[mode.id]}
@@ -123,15 +145,25 @@ export default function ModesPage() {
           <section className="game-card p-6">
             <p className="section-title">Regional Cinema</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {REGIONS.map((region) => (
-                <Link
-                  key={region.id}
-                  href={`/play?mode=regional&region=${region.id}&difficulty=medium`}
-                  className="rounded-full border border-cinema-gold/15 bg-black/25 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
-                >
-                  {region.name}
-                </Link>
-              ))}
+              {REGIONS.map((region) =>
+                availableRegionIds.has(region.id) ? (
+                  <Link
+                    key={region.id}
+                    href={`/play?mode=regional&region=${region.id}&difficulty=medium`}
+                    className="rounded-full border border-cinema-gold/15 bg-black/25 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
+                  >
+                    {region.name}
+                  </Link>
+                ) : (
+                  <span
+                    key={region.id}
+                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-500"
+                    title="Regional data is not available yet"
+                  >
+                    {region.name} · Data soon
+                  </span>
+                )
+              )}
             </div>
           </section>
 

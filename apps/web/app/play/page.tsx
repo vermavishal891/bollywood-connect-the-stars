@@ -37,20 +37,22 @@ interface GameMove {
 
 interface GameData {
   id: string;
-  startActor: {
+  startActor?: {
     id: number;
     name: string;
     profileImageUrl?: string | null;
     description?: string | null;
     trivia?: string | null;
-  };
-  targetActor: {
+  } | null;
+  targetActor?: {
     id: number;
     name: string;
     profileImageUrl?: string | null;
     description?: string | null;
     trivia?: string | null;
-  };
+  } | null;
+  startMovie?: MovieResult | null;
+  targetMovie?: MovieResult | null;
   difficulty: string;
   mode: string;
   status: string;
@@ -58,6 +60,9 @@ interface GameData {
   movesCount: number;
   hintsUsed: number;
   timeTaken?: number;
+  optimalMoves?: number | null;
+  isPerfect?: boolean;
+  dailyDate?: string | null;
   moves: GameMove[];
 }
 
@@ -104,6 +109,37 @@ function toTitle(value: string) {
   return value
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getEndpoint(game: GameData, endpoint: 'start' | 'target'): EndpointEntity {
+  const actor = endpoint === 'start' ? game.startActor : game.targetActor;
+  if (actor) {
+    return {
+      type: 'actor',
+      id: actor.id,
+      name: actor.name,
+      imageUrl: actor.profileImageUrl,
+      description: actor.description,
+      trivia: actor.trivia,
+    };
+  }
+
+  const movie = endpoint === 'start' ? game.startMovie : game.targetMovie;
+  if (movie) {
+    return {
+      type: 'movie',
+      id: movie.id,
+      name: movie.title,
+      imageUrl: movie.posterUrl,
+      description: movie.genre || undefined,
+    };
+  }
+
+  return { type: 'actor', id: 0, name: 'Unknown' };
+}
+
+function getEndpointName(game: GameData, endpoint: 'start' | 'target') {
+  return getEndpoint(game, endpoint).name;
 }
 
 function parseTrivia(trivia?: string | null) {
@@ -227,12 +263,16 @@ function TriviaCard({
   );
 }
 
-function ActorSpotlight({
-  actor,
+type EndpointEntity =
+  | { type: 'actor'; id: number; name: string; imageUrl?: string | null; description?: string | null; trivia?: string | null }
+  | { type: 'movie'; id: number; name: string; imageUrl?: string | null; description?: string | null; trivia?: string | null };
+
+function EndpointSpotlight({
+  entity,
   label,
   tone,
 }: {
-  actor: GameData['startActor'];
+  entity: EndpointEntity;
   label: 'Start' | 'Target';
   tone: 'gold' | 'red';
 }) {
@@ -248,8 +288,13 @@ function ActorSpotlight({
       <span className={`mb-3 rounded-lg border bg-black/30 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] ${accent}`}>
         {label}
       </span>
-      <ActorAvatar url={actor.profileImageUrl} name={actor.name} size={112} featured />
-      <h2 className="mt-3 max-w-[230px] text-balance text-xl font-bold leading-tight text-white md:text-2xl">{actor.name}</h2>
+      {entity.type === 'actor' ? (
+        <ActorAvatar url={entity.imageUrl} name={entity.name} size={112} featured />
+      ) : (
+        <MoviePoster url={entity.imageUrl} title={entity.name} size={128} />
+      )}
+      <h2 className="mt-3 max-w-[230px] text-balance text-xl font-bold leading-tight text-white md:text-2xl">{entity.name}</h2>
+      <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-gray-500">{entity.type}</p>
     </motion.div>
   );
 }
@@ -407,6 +452,9 @@ function PlayPageContent() {
   const difficulty = searchParams.get('difficulty') || 'medium';
   const region = searchParams.get('region') || undefined;
   const theme = searchParams.get('theme') || undefined;
+  const playerName = searchParams.get('playerName') || undefined;
+  const startActorId = Number(searchParams.get('startActorId')) || undefined;
+  const targetActorId = Number(searchParams.get('targetActorId')) || undefined;
 
   const [game, setGame] = useState<GameData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -425,7 +473,7 @@ function PlayPageContent() {
       setIsProcessing(true);
       setLoadError(null);
       try {
-        const newGame = await createGame({ mode, difficulty, region, theme });
+        const newGame = await createGame({ mode, difficulty, region, theme, playerName, startActorId, targetActorId });
         const fullGame = await getGame(newGame.id);
         setGame(fullGame);
         setTimer(0);
@@ -442,7 +490,7 @@ function PlayPageContent() {
         setIsProcessing(false);
       }
     },
-    [difficulty, mode, region, theme]
+    [difficulty, mode, playerName, region, startActorId, targetActorId, theme]
   );
 
   useEffect(() => {
@@ -464,7 +512,7 @@ function PlayPageContent() {
 
       setIsSearching(true);
       try {
-        const results = await search(searchQuery);
+        const results = await search(searchQuery, { region, theme });
         setSearchResults(results);
       } catch {
         setSearchResults({ actors: [], movies: [] });
@@ -500,7 +548,7 @@ function PlayPageContent() {
       if (result.won) {
         toast.success(`You won! Score: ${result.score}`, { duration: 4000 });
         setShareText(
-          `I connected ${updated.startActor.name} -> ${updated.targetActor.name} in ${updated.movesCount} moves!\n\nCan you beat me?`
+          `I connected ${getEndpointName(updated, 'start')} -> ${getEndpointName(updated, 'target')} in ${updated.movesCount} moves!\n\nCan you beat me?`
         );
         setShowShare(true);
       }
@@ -616,12 +664,16 @@ function PlayPageContent() {
   }
 
   const isWon = game.status === 'completed';
-  const isMovieTurn = game.moves.length % 2 === 1;
+  const lastPlacedNode = game.moves[game.moves.length - 1];
+  const nextEntityType = lastPlacedNode?.entityType === 'movie' ? 'actor' : 'movie';
+  const isMovieTurn = nextEntityType === 'movie';
   const turnLabel = isMovieTurn ? 'Pick a movie' : 'Pick an actor';
   const turnHelp = isMovieTurn
     ? 'Connect the last actor in your path to a film.'
-    : 'Choose a co-star from the previous movie.';
+    : 'Choose a cast member from the previous movie.';
   const progress = isWon ? 100 : Math.min(100, (game.moves.length / 8) * 100);
+  const startEndpoint = getEndpoint(game, 'start');
+  const targetEndpoint = getEndpoint(game, 'target');
 
   return (
     <div className="cinematic-page">
@@ -694,7 +746,7 @@ function PlayPageContent() {
 
         <section className="game-card mb-4 overflow-hidden p-4 md:p-6">
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)] lg:items-center">
-            <ActorSpotlight actor={game.startActor} label="Start" tone="gold" />
+            <EndpointSpotlight entity={startEndpoint} label="Start" tone="gold" />
 
             <div className="flex flex-col items-center gap-4">
               <div className="hidden h-px w-full bg-gradient-to-r from-transparent via-cinema-gold/70 to-transparent lg:block" />
@@ -712,7 +764,7 @@ function PlayPageContent() {
               <div className="hidden h-px w-full bg-gradient-to-r from-transparent via-cinema-red-light/50 to-transparent lg:block" />
             </div>
 
-            <ActorSpotlight actor={game.targetActor} label="Target" tone="red" />
+            <EndpointSpotlight entity={targetEndpoint} label="Target" tone="red" />
           </div>
         </section>
 
@@ -767,9 +819,17 @@ function PlayPageContent() {
                 <Sparkles className="mx-auto mb-3 h-12 w-12 text-cinema-gold" />
                 <h2 className="gold-gradient mb-2 text-3xl font-black md:text-4xl">Connection made</h2>
                 <p className="mx-auto max-w-2xl text-gray-300">
-                  You connected <span className="font-semibold text-cinema-gold">{game.startActor.name}</span> to{' '}
-                  <span className="font-semibold text-cinema-red-light">{game.targetActor.name}</span> in {game.movesCount} moves.
+                  You connected <span className="font-semibold text-cinema-gold">{startEndpoint.name}</span> to{' '}
+                  <span className="font-semibold text-cinema-red-light">{targetEndpoint.name}</span> in {game.movesCount} moves.
                 </p>
+                {typeof game.optimalMoves === 'number' && (
+                  <p className="mt-3 text-sm font-semibold text-gray-300">
+                    Optimal path: <span className="text-cinema-gold">{game.optimalMoves}</span> moves ·{' '}
+                    <span className={game.isPerfect ? 'text-cinema-teal' : 'text-cinema-red-light'}>
+                      {game.isPerfect ? 'Perfect path' : 'Not shortest'}
+                    </span>
+                  </p>
+                )}
                 <div className="mt-5 text-5xl font-black text-cinema-gold">{game.score}</div>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   {showShare && (

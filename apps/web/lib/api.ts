@@ -21,7 +21,12 @@ export async function apiFetch(path: string, options?: RequestInit) {
   return res.json();
 }
 
-export const search = (q: string) => apiFetch(`/search?q=${encodeURIComponent(q)}`);
+export const search = (q: string, params?: { region?: string; theme?: string }) => {
+  const qs = new URLSearchParams({ q });
+  if (params?.region) qs.set('region', params.region);
+  if (params?.theme) qs.set('theme', params.theme);
+  return apiFetch(`/search?${qs.toString()}`);
+};
 export const getActor = (id: number) => apiFetch(`/actors/${id}`);
 export const getMovie = (id: number) => apiFetch(`/movies/${id}`);
 
@@ -38,8 +43,11 @@ export const resetGame = (gameId: string) =>
 export const getHint = (gameId: string, type?: string) =>
   apiFetch(`/games/${gameId}/hint`, { method: 'POST', body: JSON.stringify({ type }) });
 
-export const getLeaderboard = (params?: { difficulty?: string; mode?: string; limit?: number }) => {
-  const qs = new URLSearchParams(params as Record<string, string>).toString();
+export const getLeaderboard = (params?: { difficulty?: string; mode?: string; limit?: number; date?: string; region?: string; theme?: string }) => {
+  const qs = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') qs.set(key, String(value));
+  });
   return apiFetch(`/leaderboard?${qs}`);
 };
 
@@ -52,6 +60,9 @@ export const getAdminActors = (skip = 0, take = 50) =>
   apiFetch(`/admin/actors?skip=${skip}&take=${take}`);
 export const getAdminMovies = (skip = 0, take = 50) =>
   apiFetch(`/admin/movies?skip=${skip}&take=${take}`);
+
+export const getRegions = () => apiFetch('/metadata/regions');
+export const getThemes = () => apiFetch('/metadata/themes');
 
 // Wikipedia (free) ingestion
 export const getWikipediaStatus = () => apiFetch('/admin/wikipedia/status');

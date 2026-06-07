@@ -30,7 +30,8 @@ model Actor {
   aliases         Alias[]
   gamesAsStart    Game[]     @relation("StartActor")
   gamesAsTarget   Game[]     @relation("TargetActor")
-  dailyChallenges    DailyChallenge[]
+  dailyChallengesAsStart DailyChallenge[] @relation("DailyStartActor")
+  dailyChallengesAsTarget DailyChallenge[] @relation("DailyTargetActor")
   externalCredits    ActorMovieCredit[]
 
   @@index([normalizedName])
@@ -84,6 +85,8 @@ model Movie {
   createdAt       DateTime   @default(now())
   actors          MovieCast[]
   aliases         Alias[]
+  gamesAsStart    Game[]     @relation("StartMovie")
+  gamesAsTarget   Game[]     @relation("TargetMovie")
 
   @@index([normalizedTitle])
   @@index([releaseYear])
@@ -138,8 +141,10 @@ model User {
 
 model Game {
   id            String     @id @default(uuid())
-  startActorId  Int
-  targetActorId Int
+  startActorId  Int?
+  targetActorId Int?
+  startMovieId  Int?
+  targetMovieId Int?
   difficulty    String     @default("medium") // easy, medium, hard, legend
   mode          String     @default("classic") // classic, daily, speedrun, shortest, party, regional, movie-to-movie, theme
   status        String     @default("active") // active, completed, abandoned
@@ -153,12 +158,17 @@ model Game {
   undoCount     Int        @default(0)
   timeTaken     Int?       // in seconds
   score         Int        @default(0)
+  optimalMoves  Int?
+  isPerfect     Boolean    @default(false)
+  dailyDate     String?
   createdAt     DateTime   @default(now())
   completedAt   DateTime?
   moves         GameMove[]
 
-  startActor  Actor @relation("StartActor", fields: [startActorId], references: [id])
-  targetActor Actor @relation("TargetActor", fields: [targetActorId], references: [id])
+  startActor  Actor? @relation("StartActor", fields: [startActorId], references: [id])
+  targetActor Actor? @relation("TargetActor", fields: [targetActorId], references: [id])
+  startMovie  Movie? @relation("StartMovie", fields: [startMovieId], references: [id])
+  targetMovie Movie? @relation("TargetMovie", fields: [targetMovieId], references: [id])
   user        User? @relation(fields: [userId], references: [id])
 
   @@index([status])
@@ -166,6 +176,7 @@ model Game {
   @@index([mode])
   @@index([playerId])
   @@index([userId])
+  @@index([dailyDate])
 }
 
 model GameMove {
@@ -197,6 +208,11 @@ model Leaderboard {
   startActor    String
   targetActor   String
   pathLength    Int
+  dailyDate     String?
+  region        String?
+  theme         String?
+  optimalMoves  Int?
+  isPerfect     Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id])
@@ -206,6 +222,9 @@ model Leaderboard {
   @@index([score])
   @@index([createdAt])
   @@index([userId])
+  @@index([dailyDate])
+  @@index([region])
+  @@index([theme])
 }
 
 model DailyChallenge {
@@ -218,7 +237,8 @@ model DailyChallenge {
   description   String?
   createdAt     DateTime @default(now())
 
-  startActor  Actor @relation(fields: [startActorId], references: [id])
+  startActor  Actor @relation("DailyStartActor", fields: [startActorId], references: [id])
+  targetActor Actor @relation("DailyTargetActor", fields: [targetActorId], references: [id])
 
   @@index([date])
 }

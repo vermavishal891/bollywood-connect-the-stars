@@ -6,22 +6,27 @@ import { motion } from 'framer-motion';
 import { Clock, Film, Home, Loader2, Medal, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getLeaderboard } from '@/lib/api';
+import { GAME_MODES } from '@bollywood-connect/shared';
 
 const filters = ['all', 'easy', 'medium', 'hard', 'legend'];
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
+  const [mode, setMode] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const params = filter !== 'all' ? { difficulty: filter } : {};
+    const params = {
+      ...(filter !== 'all' ? { difficulty: filter } : {}),
+      ...(mode !== 'all' ? { mode } : {}),
+    };
     setLoading(true);
     getLeaderboard(params)
       .then(setEntries)
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, mode]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -44,6 +49,22 @@ export default function LeaderboardPage() {
             <h1 className="mt-1 font-display text-3xl font-black text-white md:text-5xl">Star Leaderboard</h1>
           </div>
           <div className="h-11 w-11" />
+        </div>
+
+        <div className="mb-3 flex flex-wrap justify-center gap-2">
+          {[{ id: 'all', name: 'All Modes' }, ...GAME_MODES].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setMode(item.id)}
+              className={`rounded-full border px-4 py-2 text-sm font-bold capitalize transition-all ${
+                mode === item.id
+                  ? 'border-cinema-gold bg-cinema-gold text-cinema-950'
+                  : 'border-cinema-gold/15 bg-black/25 text-gray-200 hover:border-cinema-gold/50 hover:text-white'
+              }`}
+            >
+              {item.name}
+            </button>
+          ))}
         </div>
 
         <div className="mb-6 flex flex-wrap justify-center gap-2">

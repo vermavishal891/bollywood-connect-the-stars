@@ -156,9 +156,9 @@ export const THEMES: ThemeConfig[] = [
   { id: 'comedy', name: 'Comedy', description: 'Laugh-out-loud comedies', icon: '😂', filter: { genres: ['comedy'] } },
   { id: 'action', name: 'Action', description: 'High-octane action films', icon: '💥', filter: { genres: ['action'] } },
   { id: 'classics', name: 'Golden Classics', description: 'Films before 1980', icon: '🎞️', filter: { decades: [1950, 1979] } },
-  { id: 'villains', name: 'Villains', description: 'Famous antagonists', icon: '😈', filter: { actorTags: ['villain'] } },
-  { id: 'yrf', name: 'YRF Films', description: 'Yash Raj Films productions', icon: '🎬', filter: { studios: ['yrf', 'yash raj'] } },
-  { id: 'dharma', name: 'Dharma Films', description: 'Dharma Productions', icon: '🌟', filter: { studios: ['dharma'] } },
+  { id: 'villains', name: 'Villain Energy', description: 'Crime, thriller, and action-heavy puzzles', icon: '😈', filter: { genres: ['crime', 'thriller', 'action'] } },
+  { id: 'yrf', name: 'YRF-Style Romance', description: 'Glossy romance and action-drama connections', icon: '🎬', filter: { genres: ['romance', 'action', 'drama'] } },
+  { id: 'dharma', name: 'Dharma-Style Drama', description: 'Family, comedy, romance, and drama links', icon: '🌟', filter: { genres: ['family', 'comedy', 'romance', 'drama'] } },
 ];
 
 export function normalizeText(value: string): string {

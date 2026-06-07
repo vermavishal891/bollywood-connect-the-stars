@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -19,6 +19,17 @@ import {
 } from 'lucide-react';
 import { DIFFICULTIES, GAME_MODES, REGIONS, THEMES } from '@bollywood-connect/shared';
 import BrandLogo from '@/components/BrandLogo';
+import { getRegions } from '@/lib/api';
+
+const FEATURED_PUZZLE_HREF = '/play?mode=shortest&difficulty=medium&startActorId=116&targetActorId=1990';
+
+function getModeHref(modeId: string, difficulty: string) {
+  if (modeId === 'daily') return '/daily';
+  if (modeId === 'party') return '/party';
+  if (modeId === 'regional') return `/play?mode=regional&region=hindi&difficulty=${difficulty}`;
+  if (modeId === 'theme') return `/play?mode=theme&theme=romance&difficulty=${difficulty}`;
+  return `/play?mode=${modeId}&difficulty=${difficulty}`;
+}
 
 const gameModeIcons: Record<string, ReactNode> = {
   classic: <Star className="h-6 w-6" />,
@@ -109,8 +120,17 @@ function ModeCard({
 export default function HomePage() {
   const [selectedMode, setSelectedMode] = useState('classic');
   const [selectedDifficulty, setSelectedDifficulty] = useState('medium');
+  const [availableRegionIds, setAvailableRegionIds] = useState<Set<string>>(new Set(['hindi']));
 
   const featuredModes = GAME_MODES.slice(0, 4);
+
+  useEffect(() => {
+    getRegions()
+      .then((regions) => {
+        setAvailableRegionIds(new Set(regions.filter((region: any) => region.available).map((region: any) => region.id)));
+      })
+      .catch(() => setAvailableRegionIds(new Set(['hindi'])));
+  }, []);
 
   return (
     <div className="cinematic-page">
@@ -171,7 +191,7 @@ export default function HomePage() {
               <p className="mt-6 text-sm leading-6 text-gray-400">
                 Find the shortest cinematic bridge through shared movies, co-stars, and creators.
               </p>
-              <Link href="/play?mode=shortest&difficulty=medium" className="btn-primary mt-6">
+              <Link href={FEATURED_PUZZLE_HREF} className="btn-primary mt-6">
                 Solve Now
               </Link>
             </div>
@@ -185,7 +205,7 @@ export default function HomePage() {
             <p className="section-title">Choose Your Stardom Run</p>
             <h2 className="mt-2 text-3xl font-black text-white md:text-5xl">Game Modes</h2>
           </div>
-          <Link href={`/play?mode=${selectedMode}&difficulty=${selectedDifficulty}`} className="btn-primary">
+          <Link href={getModeHref(selectedMode, selectedDifficulty)} className="btn-primary">
             Play Selected
             <ChevronRight className="h-5 w-5" />
           </Link>
@@ -267,13 +287,23 @@ export default function HomePage() {
           <p className="section-title">Regional Cinema</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {REGIONS.map((region) => (
-              <Link
-                key={region.id}
-                href={`/play?mode=regional&region=${region.id}&difficulty=${selectedDifficulty}`}
-                className="rounded-full border border-cinema-gold/15 bg-black/25 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
-              >
-                {region.name}
-              </Link>
+              availableRegionIds.has(region.id) ? (
+                <Link
+                  key={region.id}
+                  href={`/play?mode=regional&region=${region.id}&difficulty=${selectedDifficulty}`}
+                  className="rounded-full border border-cinema-gold/15 bg-black/25 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
+                >
+                  {region.name}
+                </Link>
+              ) : (
+                <span
+                  key={region.id}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-500"
+                  title="Regional data is not available yet"
+                >
+                  {region.name} · Data soon
+                </span>
+              )
             ))}
           </div>
         </div>

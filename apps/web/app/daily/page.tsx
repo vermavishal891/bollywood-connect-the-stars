@@ -100,7 +100,11 @@ export default function DailyPage() {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/40 bg-black/30 text-cinema-gold shadow-lg shadow-cinema-gold/15">
                   <ArrowRight className="h-6 w-6" />
                 </div>
-                <ActorToken mystery />
+                <ActorToken
+                  name={challenge.completedToday ? challenge.targetActor?.name : undefined}
+                  imageUrl={challenge.completedToday ? challenge.targetActor?.profileImageUrl : undefined}
+                  mystery={!challenge.completedToday}
+                />
               </div>
 
               {challenge.description && (
@@ -116,13 +120,13 @@ export default function DailyPage() {
                 </div>
                 <div className="stat-pill">
                   <Trophy className="h-4 w-4 text-cinema-teal" />
-                  <span>Daily board</span>
+                  <span>{challenge.completedToday ? `Completed · ${challenge.completedToday.score}` : 'Daily board'}</span>
                 </div>
               </div>
 
-              <Link href={`/play?mode=daily&difficulty=${challenge.difficulty}`} className="btn-primary text-base">
+              <Link href={`/play?mode=daily&difficulty=${challenge.difficulty}`} className={challenge.completedToday ? 'btn-secondary text-base' : 'btn-primary text-base'}>
                 <Clock className="h-5 w-5" />
-                Play Daily Challenge
+                {challenge.completedToday ? 'Improve Today' : 'Play Daily Challenge'}
               </Link>
             </>
           )}

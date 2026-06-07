@@ -1,11 +1,99 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@bollywood-connect/db';
-import { calculateScore, normalizeText, Difficulty } from '@bollywood-connect/shared';
-import { buildGraph, findShortestPath, isValidMove, generatePair, getHint, isQualifiedStartActor } from './game-engine';
+import { normalizeText, Difficulty, GameMode, REGIONS, THEMES } from '@bollywood-connect/shared';
+import {
+  buildGraph,
+  calculateModeScore,
+  generatePuzzleByMode,
+  getShortestPath,
+  getThemeMovieWhere,
+  isValidMove,
+  getHint,
+  type GraphNode,
+} from './game-engine';
 import { registerAuthRoutes, optionalAuthHook, adminHook } from './auth';
 
 function normalize(value: string) {
   return normalizeText(value);
+}
+
+const gameModes = new Set<GameMode>([
+  'classic',
+  'daily',
+  'speedrun',
+  'shortest',
+  'party',
+  'regional',
+  'movie-to-movie',
+  'theme',
+]);
+
+function asGameMode(value?: string): GameMode {
+  return value && gameModes.has(value as GameMode) ? (value as GameMode) : 'classic';
+}
+
+function todayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function startOfDateKey(dateKey: string) {
+  return new Date(`${dateKey}T00:00:00.000Z`);
+}
+
+function isBetterLeaderboardScore(mode: string, next: { score: number; timeTaken: number; movesCount: number }, current: { score: number; timeTaken: number; movesCount: number }) {
+  if (mode === 'speedrun') {
+    if (next.timeTaken !== current.timeTaken) return next.timeTaken < current.timeTaken;
+    return next.movesCount < current.movesCount;
+  }
+  if (mode === 'shortest') {
+    if (next.movesCount !== current.movesCount) return next.movesCount < current.movesCount;
+    return next.score > current.score;
+  }
+  return next.score > current.score;
+}
+
+async function getNodeName(node: GraphNode) {
+  if (node.type === 'actor') {
+    return (await prisma.actor.findUnique({ where: { id: node.id }, select: { name: true } }))?.name || '';
+  }
+  return (await prisma.movie.findUnique({ where: { id: node.id }, select: { title: true } }))?.title || '';
+}
+
+function getPuzzleDataError(error: unknown) {
+  if (!(error instanceof Error)) return null;
+  return error.message.startsWith('Not enough') || error.message.includes('must be actor-to-actor')
+    ? error.message
+    : null;
+}
+
+async function getOrCreateDailyChallenge() {
+  const dateKey = todayKey();
+  const date = startOfDateKey(dateKey);
+  const existing = await prisma.dailyChallenge.findUnique({
+    where: { date },
+    include: { startActor: true, targetActor: true },
+  });
+  if (existing) return existing;
+
+  const puzzle = await generatePuzzleByMode({
+    mode: 'daily',
+    difficulty: 'medium',
+    seed: dateKey,
+  });
+  if (puzzle.startNode.type !== 'actor' || puzzle.targetNode.type !== 'actor') {
+    throw new Error('Daily challenge must be actor-to-actor');
+  }
+
+  return prisma.dailyChallenge.create({
+    data: {
+      date,
+      startActorId: puzzle.startNode.id,
+      targetActorId: puzzle.targetNode.id,
+      difficulty: 'medium',
+      description: 'One shared Bollywood connection for everyone today.',
+    },
+    include: { startActor: true, targetActor: true },
+  });
 }
 
 export async function registerRoutes(app: FastifyInstance) {
@@ -14,10 +102,24 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Search actors and movies
   app.get('/search', async (request, reply) => {
-    const { q } = request.query as { q?: string };
+    const { q, region, theme } = request.query as { q?: string; region?: string; theme?: string };
     if (!q || q.length < 2) return { actors: [], movies: [] };
 
     const normalized = normalize(q);
+    const themeMovieWhere = getThemeMovieWhere(theme);
+    const movieFilter =
+      region || theme
+        ? {
+            movies: {
+              some: {
+                movie: {
+                  ...(region ? { region } : {}),
+                  ...themeMovieWhere,
+                },
+              },
+            },
+          }
+        : {};
 
     // Search aliases first
     const aliases = await prisma.alias.findMany({
@@ -31,6 +133,7 @@ export async function registerRoutes(app: FastifyInstance) {
     const actors = await prisma.actor.findMany({
       where: {
         isBollywood: true,
+        ...movieFilter,
         OR: [
           { id: { in: actorIds } },
           { normalizedName: { contains: normalized } },
@@ -43,9 +146,15 @@ export async function registerRoutes(app: FastifyInstance) {
     const movies = await prisma.movie.findMany({
       where: {
         isBollywood: true,
-        OR: [
-          { id: { in: movieIds } },
-          { normalizedTitle: { contains: normalized } },
+        ...(region ? { region } : {}),
+        AND: [
+          themeMovieWhere,
+          {
+            OR: [
+              { id: { in: movieIds } },
+              { normalizedTitle: { contains: normalized } },
+            ],
+          },
         ],
       },
       orderBy: { popularityScore: 'desc' },
@@ -85,48 +194,87 @@ export async function registerRoutes(app: FastifyInstance) {
       playerName?: string;
     };
 
-    let startActorId = body.startActorId;
-    let targetActorId = body.targetActorId;
+    const mode = asGameMode(body.mode);
+    const difficulty = body.difficulty || 'medium';
+    let startNode: GraphNode;
+    let targetNode: GraphNode;
+    let optimalMoves: number | undefined;
+    let dailyDate: string | undefined;
 
-    if (!startActorId || !targetActorId) {
-      const pair = await generatePair(body.difficulty || 'medium');
-      startActorId = pair.startActorId;
-      targetActorId = pair.targetActorId;
-    } else {
-      const [startValid, targetValid] = await Promise.all([
-        isQualifiedStartActor(startActorId),
-        isQualifiedStartActor(targetActorId),
-      ]);
-      if (!startValid || !targetValid) {
-        return reply.status(400).send({ error: 'Actor does not meet the minimum high-popularity movie requirement' });
+    try {
+      if (mode === 'daily') {
+        const challenge = await getOrCreateDailyChallenge();
+        startNode = { type: 'actor', id: challenge.startActorId };
+        targetNode = { type: 'actor', id: challenge.targetActorId };
+        dailyDate = todayKey(challenge.date);
+        const { actorToMovies, movieToActors } = await buildGraph();
+        const path = getShortestPath(startNode, targetNode, actorToMovies, movieToActors);
+        optimalMoves = path ? path.length - 1 : undefined;
+      } else if (body.startActorId && body.targetActorId && mode !== 'movie-to-movie') {
+        const startActorId = body.startActorId;
+        const targetActorId = body.targetActorId;
+        const [startActor, targetActor] = await Promise.all([
+          prisma.actor.findFirst({ where: { id: startActorId, isBollywood: true, isActive: true }, select: { id: true } }),
+          prisma.actor.findFirst({ where: { id: targetActorId, isBollywood: true, isActive: true }, select: { id: true } }),
+        ]);
+        if (!startActor || !targetActor) {
+          return reply.status(400).send({ error: 'Actor is not available in the Bollywood graph' });
+        }
+        startNode = { type: 'actor', id: startActorId };
+        targetNode = { type: 'actor', id: targetActorId };
+        const { actorToMovies, movieToActors } = await buildGraph();
+        const path = getShortestPath(startNode, targetNode, actorToMovies, movieToActors);
+        if (!path) {
+          return reply.status(400).send({ error: 'These actors do not have a valid connection yet' });
+        }
+        optimalMoves = path.length - 1;
+      } else {
+        const puzzle = await generatePuzzleByMode({
+          mode,
+          difficulty,
+          region: body.region,
+          theme: body.theme,
+        });
+        startNode = puzzle.startNode;
+        targetNode = puzzle.targetNode;
+        optimalMoves = puzzle.optimalMoves;
       }
+    } catch (error) {
+      const message = getPuzzleDataError(error);
+      if (message) return reply.status(400).send({ error: message });
+      throw error;
     }
 
     const user = request.user;
     const playerName = user?.username || body.playerName || 'Anonymous';
+    const startName = await getNodeName(startNode);
 
     const game = await prisma.game.create({
       data: {
-        startActorId,
-        targetActorId,
-        difficulty: body.difficulty || 'medium',
-        mode: body.mode || 'classic',
+        startActorId: startNode.type === 'actor' ? startNode.id : null,
+        targetActorId: targetNode.type === 'actor' ? targetNode.id : null,
+        startMovieId: startNode.type === 'movie' ? startNode.id : null,
+        targetMovieId: targetNode.type === 'movie' ? targetNode.id : null,
+        difficulty,
+        mode,
         theme: body.theme,
-        region: body.region,
+        region: mode === 'regional' ? body.region || 'hindi' : body.region,
         playerName,
         userId: user?.id || null,
+        optimalMoves,
+        dailyDate,
       },
-      include: { startActor: true, targetActor: true },
+      include: { startActor: true, targetActor: true, startMovie: true, targetMovie: true },
     });
 
-    // Add first move (start actor)
+    // Add first move (start node)
     await prisma.gameMove.create({
       data: {
         gameId: game.id,
         moveNumber: 1,
-        entityType: 'actor',
-        entityId: startActorId,
-        entityName: game.startActor.name,
+        entityType: startNode.type,
+        entityId: startNode.id,
+        entityName: startName,
       },
     });
 
@@ -141,6 +289,8 @@ export async function registerRoutes(app: FastifyInstance) {
       include: {
         startActor: true,
         targetActor: true,
+        startMovie: true,
+        targetMovie: true,
         moves: { orderBy: { moveNumber: 'asc' } },
       },
     });
@@ -183,13 +333,26 @@ export async function registerRoutes(app: FastifyInstance) {
     }
 
     const lastMove = game.moves[game.moves.length - 1];
-    const currentNode = lastMove
+    const currentNode: GraphNode = lastMove
       ? { type: lastMove.entityType as 'actor' | 'movie', id: lastMove.entityId }
-      : { type: 'actor' as const, id: game.startActorId };
+      : game.startMovieId
+        ? { type: 'movie', id: game.startMovieId }
+        : game.startActorId
+          ? { type: 'actor', id: game.startActorId }
+          : { type: entityType, id: entityId };
 
-    const nextNode = { type: entityType, id: entityId };
+    const nextNode: GraphNode = { type: entityType, id: entityId };
+    const targetNode: GraphNode | null = game.targetMovieId
+      ? { type: 'movie', id: game.targetMovieId }
+      : game.targetActorId
+        ? { type: 'actor', id: game.targetActorId }
+        : null;
 
-    const { actorToMovies, movieToActors } = await buildGraph();
+    if (!targetNode) {
+      return reply.status(400).send({ error: 'Game target missing' });
+    }
+
+    const { actorToMovies, movieToActors } = await buildGraph({ region: game.region || undefined, theme: game.theme || undefined });
 
     if (!isValidMove(currentNode, nextNode, actorToMovies, movieToActors)) {
       return reply.status(400).send({ error: 'Invalid move' });
@@ -221,15 +384,29 @@ export async function registerRoutes(app: FastifyInstance) {
     });
 
     // Check win condition
-    if (entityType === 'actor' && entityId === game.targetActorId) {
+    if (entityType === targetNode.type && entityId === targetNode.id) {
       const now = new Date();
       const timeTaken = Math.floor((now.getTime() - game.createdAt.getTime()) / 1000);
 
-      const path = findShortestPath(game.startActorId, game.targetActorId, actorToMovies, movieToActors);
-      const shortestPathLength = path ? Math.floor((path.length - 1) / 2) : 0;
+      const startNode: GraphNode | null = game.startMovieId
+        ? { type: 'movie', id: game.startMovieId }
+        : game.startActorId
+          ? { type: 'actor', id: game.startActorId }
+          : null;
+      const path = startNode ? getShortestPath(startNode, targetNode, actorToMovies, movieToActors) : null;
+      const shortestPathLength = path ? path.length - 1 : game.optimalMoves || 0;
       const actualMoves = game.moves.length; // excluding first node
+      const isPerfect = shortestPathLength > 0 && actualMoves === shortestPathLength;
 
-      const score = calculateScore(shortestPathLength, actualMoves, timeTaken, game.hintsUsed, game.difficulty as Difficulty);
+      const score = calculateModeScore({
+        mode: asGameMode(game.mode),
+        difficulty: game.difficulty as Difficulty,
+        shortestEdges: shortestPathLength,
+        actualEdges: actualMoves,
+        timeTaken,
+        hintsUsed: game.hintsUsed,
+        isPerfect,
+      });
 
       await prisma.game.update({
         where: { id: gameId },
@@ -239,31 +416,55 @@ export async function registerRoutes(app: FastifyInstance) {
           movesCount: actualMoves,
           timeTaken,
           score,
+          optimalMoves: shortestPathLength,
+          isPerfect,
         },
       });
 
       // Add to leaderboard
-      const startActor = await prisma.actor.findUnique({ where: { id: game.startActorId } });
-      const targetActor = await prisma.actor.findUnique({ where: { id: game.targetActorId } });
+      const startName = startNode ? await getNodeName(startNode) : '';
+      const targetName = await getNodeName(targetNode);
+      const leaderboardData = {
+        playerName: game.playerName || 'Anonymous',
+        userId: game.userId,
+        gameId,
+        difficulty: game.difficulty,
+        mode: game.mode,
+        movesCount: actualMoves,
+        timeTaken,
+        hintsUsed: game.hintsUsed,
+        score,
+        startActor: startName,
+        targetActor: targetName,
+        pathLength: shortestPathLength,
+        dailyDate: game.dailyDate,
+        region: game.region,
+        theme: game.theme,
+        optimalMoves: shortestPathLength,
+        isPerfect,
+      };
 
-      await prisma.leaderboard.create({
+      if (game.mode === 'daily' && game.userId && game.dailyDate) {
+        const existing = await prisma.leaderboard.findFirst({
+          where: { userId: game.userId, mode: 'daily', dailyDate: game.dailyDate },
+        });
+        if (!existing) {
+          await prisma.leaderboard.create({ data: leaderboardData });
+        } else if (isBetterLeaderboardScore(game.mode, leaderboardData, existing)) {
+          await prisma.leaderboard.update({
+            where: { id: existing.id },
+            data: { ...leaderboardData, gameId: existing.gameId },
+          });
+        }
+      } else {
+        await prisma.leaderboard.create({
         data: {
-          playerName: game.playerName || 'Anonymous',
-          userId: game.userId,
-          gameId,
-          difficulty: game.difficulty,
-          mode: game.mode,
-          movesCount: actualMoves,
-          timeTaken,
-          hintsUsed: game.hintsUsed,
-          score,
-          startActor: startActor?.name || '',
-          targetActor: targetActor?.name || '',
-          pathLength: shortestPathLength,
+          ...leaderboardData,
         },
-      });
+        });
+      }
 
-      return { move, won: true, score, timeTaken };
+      return { move, won: true, score, timeTaken, optimalMoves: shortestPathLength, isPerfect };
     }
 
     await prisma.game.update({
@@ -310,14 +511,22 @@ export async function registerRoutes(app: FastifyInstance) {
     });
 
     // Recreate first move
-    const startActor = await prisma.actor.findUnique({ where: { id: game.startActorId } });
+    const startNode: GraphNode | null = game.startMovieId
+      ? { type: 'movie', id: game.startMovieId }
+      : game.startActorId
+        ? { type: 'actor', id: game.startActorId }
+        : null;
+    if (!startNode) {
+      return reply.status(400).send({ error: 'Game start missing' });
+    }
+
     await prisma.gameMove.create({
       data: {
         gameId,
         moveNumber: 1,
-        entityType: 'actor',
-        entityId: game.startActorId,
-        entityName: startActor?.name || '',
+        entityType: startNode.type,
+        entityId: startNode.id,
+        entityName: await getNodeName(startNode),
       },
     });
 
@@ -345,14 +554,31 @@ export async function registerRoutes(app: FastifyInstance) {
 
   // Get leaderboard
   app.get('/leaderboard', async (request) => {
-    const { difficulty, mode, limit = '50' } = request.query as { difficulty?: string; mode?: string; limit?: string };
+    const { difficulty, mode, limit = '50', date, region, theme } = request.query as {
+      difficulty?: string;
+      mode?: string;
+      limit?: string;
+      date?: string;
+      region?: string;
+      theme?: string;
+    };
+
+    const orderBy =
+      mode === 'speedrun'
+        ? [{ timeTaken: 'asc' as const }, { movesCount: 'asc' as const }, { score: 'desc' as const }]
+        : mode === 'shortest'
+          ? [{ movesCount: 'asc' as const }, { timeTaken: 'asc' as const }, { score: 'desc' as const }]
+          : [{ score: 'desc' as const }, { timeTaken: 'asc' as const }];
 
     const entries = await prisma.leaderboard.findMany({
       where: {
         ...(difficulty ? { difficulty } : {}),
         ...(mode ? { mode } : {}),
+        ...(date ? { dailyDate: date } : {}),
+        ...(region ? { region } : {}),
+        ...(theme ? { theme } : {}),
       },
-      orderBy: { score: 'desc' },
+      orderBy,
       take: parseInt(limit),
     });
 
@@ -360,31 +586,17 @@ export async function registerRoutes(app: FastifyInstance) {
   });
 
   // Get daily challenge
-  app.get('/daily', async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  app.get('/daily', { onRequest: optionalAuthHook }, async (request) => {
+    const challenge = await getOrCreateDailyChallenge();
+    const date = todayKey(challenge.date);
+    const completedToday = request.user
+      ? await prisma.leaderboard.findFirst({
+          where: { userId: request.user.id, mode: 'daily', dailyDate: date },
+          orderBy: { score: 'desc' },
+        })
+      : null;
 
-    const challenge = await prisma.dailyChallenge.findUnique({
-      where: { date: today },
-      include: { startActor: true },
-    });
-
-    if (!challenge) {
-      // Generate one
-      const pair = await generatePair('medium');
-      const newChallenge = await prisma.dailyChallenge.create({
-        data: {
-          date: today,
-          startActorId: pair.startActorId,
-          targetActorId: pair.targetActorId,
-          difficulty: 'medium',
-        },
-        include: { startActor: true },
-      });
-      return newChallenge;
-    }
-
-    return challenge;
+    return { ...challenge, date, completedToday };
   });
 
   // Submit daily challenge
@@ -392,6 +604,44 @@ export async function registerRoutes(app: FastifyInstance) {
     const { gameId } = request.body as { gameId: string };
     const game = await prisma.game.findUnique({ where: { id: gameId } });
     return { game };
+  });
+
+  app.get('/game/modes', async () => {
+    return { modes: [...gameModes] };
+  });
+
+  app.get('/metadata/regions', async () => {
+    const counts = await prisma.movie.groupBy({
+      by: ['region'],
+      _count: { region: true },
+      where: { isBollywood: true },
+    });
+    const countMap = new Map(counts.map((item) => [item.region || 'unknown', item._count.region]));
+    return REGIONS.map((region) => ({
+      ...region,
+      availableMovies: countMap.get(region.id) || 0,
+      available: (countMap.get(region.id) || 0) > 0,
+    }));
+  });
+
+  app.get('/metadata/themes', async () => {
+    const themes = await Promise.all(
+      THEMES.map(async (theme) => {
+        const availableMovies = await prisma.movie.count({
+          where: {
+            isBollywood: true,
+            ...getThemeMovieWhere(theme.id),
+          },
+        });
+        return {
+          ...theme,
+          supported: availableMovies > 0,
+          availableMovies,
+          available: availableMovies > 0,
+        };
+      })
+    );
+    return themes;
   });
 
   // ===== ADMIN ROUTES (protected by adminHook) =====

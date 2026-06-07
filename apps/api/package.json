@@ -4,6 +4,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/main.ts",
+    "test": "tsx src/game-engine.test.ts",
     "start": "node dist/main.js"
   },
   "dependencies": {
