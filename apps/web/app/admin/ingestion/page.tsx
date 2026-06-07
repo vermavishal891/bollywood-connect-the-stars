@@ -17,7 +17,6 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
-import BrandLogo from '@/components/BrandLogo';
 
 interface TMDBStatus {
   ok: boolean;
@@ -206,7 +205,9 @@ export default function IngestionPage() {
           Back to Admin
         </Link>
 
-        <BrandLogo variant="gold" className="mb-2 justify-start" imageClassName="h-20 w-20 object-contain" />
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
+          <Database className="h-6 w-6" />
+        </div>
         <h1 className="text-3xl font-display font-bold mb-2 text-white">Data Ingestion</h1>
         <p className="text-gray-400 mb-8">Import Bollywood actor and movie data from free sources</p>
 

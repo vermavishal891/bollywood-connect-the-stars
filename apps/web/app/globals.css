@@ -14,13 +14,14 @@
   body {
     @apply min-h-screen bg-cinema-900 text-white antialiased;
     background:
-      linear-gradient(180deg, rgba(5, 3, 10, 0.38), rgba(5, 3, 10, 0.9) 50%, #05030a 100%),
-      url('/brand/02_upscaled_4k/primary_holographic_star_reel_4096x4096.png'),
-      linear-gradient(135deg, #05030a 0%, #170028 45%, #05030a 100%);
+      radial-gradient(920px 560px at 18% -8%, rgba(20, 92, 255, 0.28), transparent 64%),
+      radial-gradient(760px 520px at 88% 8%, rgba(255, 43, 214, 0.18), transparent 66%),
+      radial-gradient(720px 430px at 52% 92%, rgba(248, 196, 76, 0.11), transparent 62%),
+      linear-gradient(135deg, #05030a 0%, #0a0612 34%, #170028 68%, #05030a 100%);
     background-attachment: fixed;
-    background-position: top center, top center, center;
+    background-position: top center, center;
     background-repeat: no-repeat;
-    background-size: cover, min(980px, 90vw) auto, cover;
+    background-size: cover;
   }
 
   body::before {
@@ -30,10 +31,13 @@
     z-index: -1;
     pointer-events: none;
     background:
-      linear-gradient(90deg, rgba(248, 196, 76, 0.07) 0 1px, transparent 1px 100%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 100%);
-    background-size: 72px 72px;
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 80%);
+      radial-gradient(circle at 16% 18%, rgba(248, 196, 76, 0.36) 0 1px, transparent 2px),
+      radial-gradient(circle at 76% 24%, rgba(255, 43, 214, 0.28) 0 1px, transparent 2px),
+      radial-gradient(circle at 42% 66%, rgba(20, 92, 255, 0.3) 0 1px, transparent 2px),
+      linear-gradient(90deg, rgba(248, 196, 76, 0.055) 0 1px, transparent 1px 100%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 100%);
+    background-size: 220px 220px, 280px 280px, 260px 260px, 80px 80px, 80px 80px;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.78), transparent 84%);
   }
 
   ::selection {
@@ -44,47 +48,51 @@
 
 @layer components {
   .cinema-card {
-    @apply rounded-lg border border-cinema-600/60 bg-cinema-800/80 shadow-2xl shadow-black/30 backdrop-blur-md;
+    @apply rounded-[1.4rem] border border-cinema-gold/20 bg-cinema-800/65 shadow-2xl shadow-black/35 backdrop-blur-xl;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 247, 214, 0.06),
+      0 18px 54px rgba(0, 0, 0, 0.42),
+      0 0 42px rgba(255, 43, 214, 0.08);
   }
 
   .cinema-glow {
     box-shadow:
-      0 0 0 1px rgba(248, 196, 76, 0.28),
+      0 0 0 1px rgba(248, 196, 76, 0.34),
       0 18px 48px rgba(0, 0, 0, 0.45),
-      0 0 44px rgba(255, 43, 214, 0.16),
-      0 0 54px rgba(20, 92, 255, 0.12);
+      0 0 44px rgba(255, 43, 214, 0.18),
+      0 0 54px rgba(20, 92, 255, 0.16);
   }
 
   .gold-gradient {
-    @apply bg-gradient-to-r from-cinema-gold via-cinema-red-light to-cinema-blue bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-cinema-gold via-cinema-gold-light to-cinema-red-light bg-clip-text text-transparent;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-gold/60 bg-gradient-to-r from-cinema-gold via-cinema-red-light to-cinema-blue px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cinema-red/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-cinema-blue/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/70 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-cinema-gold/70 bg-cinema-gold px-5 py-3 text-sm font-black text-cinema-950 shadow-lg shadow-cinema-gold/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cinema-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-gold/70 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-600/70 bg-cinema-700/70 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-red-light/50 hover:bg-cinema-600/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-cinema-gold/25 bg-white/[0.04] px-5 py-3 text-sm font-bold text-cinema-gold-light shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-red-light/50 hover:bg-cinema-700/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-cinema-red-light/50 bg-cinema-red/20 px-5 py-3 text-sm font-semibold text-cinema-red-light transition-all duration-200 hover:-translate-y-0.5 hover:bg-cinema-red/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-cinema-red-light/50 bg-cinema-red/15 px-5 py-3 text-sm font-bold text-cinema-red-light transition-all duration-200 hover:-translate-y-0.5 hover:bg-cinema-red/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .icon-button {
-    @apply inline-flex h-11 w-11 items-center justify-center rounded-lg border border-cinema-600/60 bg-cinema-800/70 text-cinema-gold transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-red-light/50 hover:bg-cinema-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-full border border-cinema-gold/25 bg-white/[0.04] text-cinema-gold transition-all duration-200 hover:-translate-y-0.5 hover:border-cinema-red-light/50 hover:bg-cinema-700/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinema-red-light/40 disabled:pointer-events-none disabled:opacity-45;
   }
 
   .search-input {
-    @apply w-full rounded-lg border border-cinema-600/70 bg-black/30 px-4 py-3.5 text-white shadow-inner shadow-black/25 outline-none transition-all placeholder:text-gray-500 focus:border-cinema-gold/70 focus:ring-2 focus:ring-cinema-gold/20;
+    @apply w-full rounded-2xl border border-cinema-gold/25 bg-black/35 px-4 py-3.5 text-white shadow-inner shadow-black/25 outline-none transition-all placeholder:text-gray-500 focus:border-cinema-gold/70 focus:ring-2 focus:ring-cinema-gold/20;
   }
 
   .node-actor {
-    @apply inline-flex items-center gap-3 rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 px-4 py-3 text-white transition-colors hover:border-cinema-gold/70;
+    @apply inline-flex items-center gap-3 rounded-2xl border border-cinema-gold/45 bg-cinema-gold/10 px-4 py-3 text-white transition-colors hover:border-cinema-gold/75;
   }
 
   .node-movie {
-    @apply inline-flex items-center gap-3 rounded-lg border border-cinema-red-light/40 bg-cinema-red/20 px-4 py-3 text-white transition-colors hover:border-cinema-red-light/60;
+    @apply inline-flex items-center gap-3 rounded-2xl border border-cinema-red-light/40 bg-cinema-red/15 px-4 py-3 text-white transition-colors hover:border-cinema-red-light/65;
   }
 
   .hero-avatar {
@@ -97,27 +105,159 @@
   }
 
   .move-poster {
-    @apply rounded-lg border border-cinema-red-light/50 object-cover shadow-lg shadow-black/30;
+    @apply rounded-2xl border border-cinema-red-light/50 object-cover shadow-lg shadow-black/30;
   }
 
   .timeline-connector {
-    @apply h-px min-w-8 bg-gradient-to-r from-cinema-gold/30 via-cinema-gold/70 to-cinema-red-light/30;
+    @apply h-px min-w-10 bg-gradient-to-r from-cinema-gold/30 via-cinema-red-light/70 to-cinema-blue/40;
+    box-shadow: 0 0 18px rgba(255, 43, 214, 0.32);
   }
 
   .game-card {
-    @apply rounded-lg border border-cinema-600/60 bg-cinema-800/90 shadow-2xl shadow-black/40 backdrop-blur-xl;
+    @apply rounded-[1.5rem] border border-cinema-gold/20 bg-cinema-800/70 shadow-2xl shadow-black/40 backdrop-blur-xl;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 247, 214, 0.06),
+      0 20px 60px rgba(0, 0, 0, 0.42),
+      0 0 38px rgba(20, 92, 255, 0.08);
   }
 
   .command-panel {
-    @apply rounded-lg border border-cinema-red-light/25 bg-black/45 shadow-2xl shadow-black/40 backdrop-blur-xl;
+    @apply rounded-[1.5rem] border border-cinema-red-light/25 bg-black/50 shadow-2xl shadow-black/40 backdrop-blur-xl;
   }
 
   .stat-pill {
-    @apply inline-flex items-center gap-2 rounded-lg border border-cinema-600/50 bg-black/30 px-3 py-2 text-sm text-gray-200;
+    @apply inline-flex items-center gap-2 rounded-full border border-cinema-gold/20 bg-black/35 px-3 py-2 text-sm text-gray-200 backdrop-blur-xl;
   }
 
   .section-title {
-    @apply text-sm font-semibold uppercase tracking-[0.22em] text-cinema-gold/80;
+    @apply text-sm font-bold uppercase tracking-[0.2em] text-cinema-gold/85;
+  }
+
+  .cinematic-page {
+    @apply relative min-h-screen overflow-hidden px-4 pb-14 pt-8 md:px-6 md:pb-20;
+  }
+
+  .cinematic-page::before,
+  .cinematic-page::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border-radius: 999px;
+    pointer-events: none;
+    filter: blur(4px);
+  }
+
+  .cinematic-page::before {
+    top: 7rem;
+    right: -8rem;
+    width: 26rem;
+    height: 26rem;
+    background: radial-gradient(circle, rgba(255, 43, 214, 0.2), transparent 68%);
+  }
+
+  .cinematic-page::after {
+    bottom: 4rem;
+    left: 12%;
+    width: 35rem;
+    height: 13rem;
+    background: radial-gradient(ellipse, rgba(248, 196, 76, 0.13), transparent 70%);
+  }
+
+  .hero-stage {
+    @apply relative overflow-hidden rounded-[2rem] border border-cinema-gold/20 bg-black/35 shadow-2xl shadow-black/40 backdrop-blur-xl;
+  }
+
+  .hero-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(460px 300px at 0% 0%, rgba(20, 92, 255, 0.28), transparent 72%),
+      radial-gradient(420px 300px at 100% 18%, rgba(255, 43, 214, 0.18), transparent 72%),
+      radial-gradient(460px 170px at 45% 102%, rgba(248, 196, 76, 0.12), transparent 76%);
+  }
+
+  .hero-stage > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .logo-tile {
+    @apply rounded-2xl border border-cinema-gold/45 bg-cinema-800/80 shadow-lg shadow-cinema-red/20;
+    box-shadow:
+      0 0 0 1px rgba(255, 247, 214, 0.04),
+      0 0 22px rgba(248, 196, 76, 0.18),
+      0 0 30px rgba(255, 43, 214, 0.12);
+  }
+
+  .mode-card {
+    @apply cinema-card relative overflow-hidden p-5 transition-all duration-200 hover:-translate-y-1 hover:border-cinema-gold/45;
+  }
+
+  .mode-card::after {
+    content: '';
+    position: absolute;
+    inset: auto -20% -45% 20%;
+    height: 8rem;
+    border-radius: 999px;
+    background: radial-gradient(ellipse, rgba(248, 196, 76, 0.12), transparent 70%);
+    pointer-events: none;
+  }
+
+  .node-map {
+    position: relative;
+    min-height: 230px;
+  }
+
+  .node-map::before {
+    content: '';
+    position: absolute;
+    inset: 52% 12% auto 12%;
+    height: 2px;
+    transform: rotate(-13deg);
+    background: linear-gradient(90deg, rgba(248, 196, 76, 0.75), rgba(255, 43, 214, 0.85), rgba(20, 92, 255, 0.75));
+    box-shadow: 0 0 24px rgba(255, 43, 214, 0.32);
+  }
+
+  .stellar-node {
+    @apply absolute flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/40 bg-cinema-800/80 text-cinema-gold shadow-lg backdrop-blur-md;
+    box-shadow: 0 0 22px rgba(248, 196, 76, 0.22), 0 0 32px rgba(255, 43, 214, 0.14);
+  }
+
+  .film-reel {
+    @apply relative rounded-full border border-cinema-gold/35;
+    background: radial-gradient(circle at center, rgba(248, 196, 76, 0.18) 0 12%, transparent 13% 100%);
+    box-shadow: 0 0 30px rgba(248, 196, 76, 0.15);
+  }
+
+  .film-reel::before {
+    content: '';
+    position: absolute;
+    inset: 18%;
+    border-radius: inherit;
+    border: 1px dashed rgba(248, 196, 76, 0.32);
+  }
+
+  .bottom-nav-safe {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  @media (min-width: 768px) {
+    .bottom-nav-safe {
+      padding-bottom: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   .win-burst {

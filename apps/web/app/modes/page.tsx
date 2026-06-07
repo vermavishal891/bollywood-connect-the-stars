@@ -16,7 +16,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { DIFFICULTIES, GAME_MODES, REGIONS, THEMES } from '@bollywood-connect/shared';
-import BrandLogo from '@/components/BrandLogo';
 
 const modeIcons: Record<string, ReactNode> = {
   classic: <Star className="h-7 w-7" />,
@@ -49,19 +48,27 @@ function DifficultyMarks({ level }: { level: string }) {
 
 export default function ModesPage() {
   return (
-    <div className="min-h-screen px-4 py-8 md:px-6">
-      <div className="mx-auto max-w-6xl">
+    <div className="cinematic-page">
+      <div className="mx-auto max-w-7xl">
         <Link href="/" className="mb-7 inline-flex items-center gap-2 text-cinema-gold transition-colors hover:text-white">
           <ArrowLeft className="h-5 w-5" />
           Back to Home
         </Link>
 
-        <div className="mb-8">
-          <BrandLogo variant="primary" className="mb-4 justify-start" imageClassName="h-28 w-28 object-contain drop-shadow-[0_0_24px_rgba(255,43,214,0.32)]" />
-          <p className="section-title">Pick your showtime</p>
-          <h1 className="mt-2 text-4xl font-bold text-white md:text-5xl">Choose Your Mode</h1>
-          <p className="mt-3 max-w-2xl text-gray-400">Jump into classic play, race the clock, or narrow the film universe by region and theme.</p>
-        </div>
+        <header className="hero-stage mb-8 px-6 py-8 md:px-10 md:py-10">
+          <div className="max-w-3xl">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
+              <Film className="h-7 w-7" />
+            </div>
+            <p className="section-title">Choose Your Stardom Run</p>
+            <h1 className="mt-3 font-display text-4xl font-black leading-tight text-white md:text-6xl">
+              Pick your puzzle mode
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-300">
+              Jump into classic play, race the clock, or narrow the film universe by region and theme.
+            </p>
+          </div>
+        </header>
 
         <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {GAME_MODES.map((mode, index) => (
@@ -69,30 +76,27 @@ export default function ModesPage() {
               key={mode.id}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.04 }}
             >
-              <Link
-                href={`/play?mode=${mode.id}&difficulty=medium`}
-                className="cinema-card group block h-full p-5 transition-all hover:-translate-y-1 hover:border-cinema-gold/60"
-              >
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-gold/30 bg-cinema-gold/10 text-cinema-gold">
+              <Link href={`/play?mode=${mode.id}&difficulty=medium`} className="mode-card group block h-full">
+                <div className="mb-7 flex items-start justify-between gap-4">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
                     {modeIcons[mode.id]}
                   </span>
                   <ChevronRight className="h-5 w-5 text-gray-500 transition-colors group-hover:text-cinema-gold" />
                 </div>
-                <h3 className="text-xl font-bold text-white">{mode.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-gray-400">{mode.description}</p>
+                <h3 className="text-xl font-black text-white">{mode.name}</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-400">{mode.description}</p>
               </Link>
             </motion.div>
           ))}
         </div>
 
-        <section className="game-card mb-10 p-6">
+        <section className="game-card mb-10 p-6 md:p-8">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="section-title">Difficulty</p>
-              <h2 className="mt-2 text-2xl font-bold text-white">Classic presets</h2>
+              <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">Classic presets</h2>
             </div>
             <Link href="/play?mode=classic&difficulty=medium" className="btn-primary">
               Quick Play
@@ -105,10 +109,10 @@ export default function ModesPage() {
               <Link
                 key={diff.id}
                 href={`/play?mode=classic&difficulty=${diff.id}`}
-                className="rounded-lg border border-cinema-600/50 bg-black/20 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-cinema-gold/60"
+                className="rounded-2xl border border-cinema-gold/15 bg-black/20 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-cinema-gold/60"
               >
                 <DifficultyMarks level={diff.id} />
-                <h3 className="mt-3 font-bold text-white">{diff.name}</h3>
+                <h3 className="mt-3 font-black text-white">{diff.name}</h3>
                 <p className="mt-1 text-xs text-gray-400">{diff.pathRange}</p>
               </Link>
             ))}
@@ -123,7 +127,7 @@ export default function ModesPage() {
                 <Link
                   key={region.id}
                   href={`/play?mode=regional&region=${region.id}&difficulty=medium`}
-                  className="rounded-lg border border-cinema-600/50 bg-black/20 px-4 py-2 text-sm text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
+                  className="rounded-full border border-cinema-gold/15 bg-black/25 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
                 >
                   {region.name}
                 </Link>
@@ -138,7 +142,7 @@ export default function ModesPage() {
                 <Link
                   key={theme.id}
                   href={`/play?mode=theme&theme=${theme.id}&difficulty=medium`}
-                  className="rounded-lg border border-cinema-600/50 bg-black/20 px-4 py-2 text-sm text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
+                  className="rounded-full border border-cinema-gold/15 bg-black/25 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:border-cinema-gold/50 hover:text-white"
                 >
                   {theme.name}
                 </Link>

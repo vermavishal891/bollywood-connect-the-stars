@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Calendar, Clock, Home, Loader2, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getDailyChallenge } from '@/lib/api';
-import BrandLogo from '@/components/BrandLogo';
 
 function initials(name?: string) {
   if (!name) return '?';
@@ -32,7 +31,7 @@ function ActorToken({ name, imageUrl, mystery = false }: { name?: string; imageU
           {mystery ? '?' : initials(name)}
         </div>
       )}
-      <span className="mt-3 max-w-[180px] text-balance text-lg font-bold text-white">{mystery ? 'Mystery Target' : name}</span>
+      <span className="mt-3 max-w-[180px] text-balance text-lg font-black text-white">{mystery ? 'Mystery Target' : name}</span>
     </div>
   );
 }
@@ -66,16 +65,18 @@ export default function DailyPage() {
   });
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-6">
-      <div className="mx-auto max-w-4xl">
+    <div className="cinematic-page">
+      <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
           <Link href="/" className="icon-button" aria-label="Go home">
             <Home className="h-5 w-5" />
           </Link>
           <div className="text-center">
-            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-16 w-16 object-contain" />
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
+              <Calendar className="h-6 w-6" />
+            </div>
             <p className="section-title">Daily Challenge</p>
-            <h1 className="mt-1 text-3xl font-bold text-white">{dateLabel}</h1>
+            <h1 className="mt-1 text-3xl font-black text-white">{dateLabel}</h1>
           </div>
           <div className="h-11 w-11" />
         </div>
@@ -83,27 +84,27 @@ export default function DailyPage() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="game-card overflow-hidden p-6 text-center md:p-8"
+          className="hero-stage overflow-hidden p-6 text-center md:p-10"
         >
           <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold">
             <Calendar className="h-7 w-7" />
           </div>
 
-          <h2 className="text-3xl font-bold text-white">One puzzle, everyone playing</h2>
-          <p className="mx-auto mt-3 max-w-xl text-gray-400">A fresh actor connection for the day, with the target hidden until you solve the route.</p>
+          <h2 className="font-display text-4xl font-black text-white md:text-5xl">One puzzle, everyone playing</h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-gray-300">A fresh actor connection for the day, with the target hidden until you solve the route.</p>
 
           {challenge && (
             <>
-              <div className="my-8 grid items-center gap-5 sm:grid-cols-[1fr_auto_1fr]">
+              <div className="my-10 grid items-center gap-5 sm:grid-cols-[1fr_auto_1fr]">
                 <ActorToken name={challenge.startActor?.name} imageUrl={challenge.startActor?.profileImageUrl} />
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-cinema-gold/40 bg-black/30 text-cinema-gold">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/40 bg-black/30 text-cinema-gold shadow-lg shadow-cinema-gold/15">
                   <ArrowRight className="h-6 w-6" />
                 </div>
                 <ActorToken mystery />
               </div>
 
               {challenge.description && (
-                <p className="mx-auto mb-6 max-w-2xl rounded-lg border border-cinema-600/40 bg-black/20 px-4 py-3 text-sm leading-6 text-gray-300">
+                <p className="mx-auto mb-6 max-w-2xl rounded-2xl border border-cinema-gold/15 bg-black/25 px-4 py-3 text-sm leading-6 text-gray-300">
                   {challenge.description}
                 </p>
               )}

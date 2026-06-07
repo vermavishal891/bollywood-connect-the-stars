@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { createGame, getGame, getHint, makeMove, resetGame, search, undoMove } from '@/lib/api';
-import BrandLogo from '@/components/BrandLogo';
 
 interface GameMove {
   id: number;
@@ -265,24 +264,24 @@ function PathNode({ move, index, onTrivia }: { move: GameMove; index: number; on
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.92, y: 12 }}
       transition={springFast}
-      className={`group relative flex w-[144px] shrink-0 flex-col items-center rounded-lg border p-2.5 text-center transition-all hover:-translate-y-0.5 ${
+      className={`group relative flex w-[156px] shrink-0 flex-col items-center rounded-2xl border p-3 text-center transition-all hover:-translate-y-0.5 ${
         isActor
-          ? 'border-cinema-gold/40 bg-cinema-gold/10 hover:border-cinema-gold/75'
-          : 'border-cinema-red-light/40 bg-cinema-red/20 hover:border-cinema-red-light/70'
+          ? 'border-cinema-gold/45 bg-cinema-gold/10 hover:border-cinema-gold/75'
+          : 'border-cinema-red-light/45 bg-cinema-red/15 hover:border-cinema-red-light/70'
       }`}
     >
-      <span className="absolute left-2 top-2 rounded-md border border-white/10 bg-black/30 px-2 py-0.5 text-[0.65rem] font-bold text-gray-300">
+      <span className="absolute left-2 top-2 rounded-full border border-white/10 bg-black/35 px-2 py-0.5 text-[0.65rem] font-black text-gray-300">
         {index === 0 ? 'Start' : index + 1}
       </span>
       {isActor ? <ActorAvatar url={move.imageUrl} name={move.entityName} size={70} /> : <MoviePoster url={move.imageUrl} title={move.entityName} size={82} />}
-      <span className="mt-2 line-clamp-2 min-h-[2.25rem] text-sm font-bold leading-5 text-white">{move.entityName}</span>
+      <span className="mt-2 line-clamp-2 min-h-[2.25rem] text-sm font-black leading-5 text-white">{move.entityName}</span>
       <span className={`mt-2 text-[0.66rem] font-bold uppercase tracking-[0.2em] ${isActor ? 'text-cinema-gold/80' : 'text-cinema-red-light/80'}`}>
         {move.entityType}
       </span>
       {move.trivia && (
         <button
           onClick={onTrivia}
-          className="absolute right-2 top-2 rounded-md p-1.5 text-gray-400 opacity-100 transition-colors hover:bg-black/30 hover:text-cinema-gold md:opacity-0 md:group-hover:opacity-100"
+          className="absolute right-2 top-2 rounded-full p-1.5 text-gray-400 opacity-100 transition-colors hover:bg-black/30 hover:text-cinema-gold md:opacity-0 md:group-hover:opacity-100"
           aria-label={`Show trivia for ${move.entityName}`}
         >
           <Info className="h-4 w-4" />
@@ -353,7 +352,7 @@ function SearchResultsPanel({
               whileTap={{ scale: isMovieTurn ? 1 : 0.98 }}
               onClick={() => onMove('actor', actor.id)}
               disabled={isMovieTurn}
-              className="flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-cinema-700/70 disabled:opacity-35"
+              className="flex w-full items-center gap-4 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] disabled:opacity-35"
             >
               <ActorAvatar url={actor.profileImageUrl} name={actor.name} size={58} />
               <span className="min-w-0 flex-1">
@@ -375,7 +374,7 @@ function SearchResultsPanel({
               whileTap={{ scale: !isMovieTurn ? 1 : 0.98 }}
               onClick={() => onMove('movie', movie.id)}
               disabled={!isMovieTurn}
-              className="flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-cinema-700/70 disabled:opacity-35"
+              className="flex w-full items-center gap-4 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] disabled:opacity-35"
             >
               <MoviePoster url={movie.posterUrl} title={movie.title} size={64} />
               <span className="min-w-0 flex-1">
@@ -586,7 +585,6 @@ function PlayPageContent() {
       <div className="flex min-h-screen items-center justify-center px-4">
         {loadError ? (
           <div className="game-card max-w-md p-6 text-center">
-            <BrandLogo variant="gold" className="mx-auto mb-4" imageClassName="h-20 w-20 object-contain" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-red-light/40 bg-cinema-red/20 text-cinema-red-light">
               <X className="h-6 w-6" />
             </div>
@@ -609,7 +607,7 @@ function PlayPageContent() {
             transition={{ duration: 1.2, repeat: Infinity }}
             className="game-card flex flex-col items-center gap-3 px-6 py-5 text-lg font-bold text-cinema-gold"
           >
-            <BrandLogo variant="gold" imageClassName="h-20 w-20 object-contain" />
+            <Sparkles className="h-8 w-8" />
             <span>Loading game...</span>
           </motion.div>
         )}
@@ -626,7 +624,7 @@ function PlayPageContent() {
   const progress = isWon ? 100 : Math.min(100, (game.moves.length / 8) * 100);
 
   return (
-    <div className="min-h-screen px-3 py-5 md:px-8 md:py-8">
+    <div className="cinematic-page">
       <Toaster
         position="top-center"
         toastOptions={{
@@ -639,8 +637,8 @@ function PlayPageContent() {
         }}
       />
 
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-6 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+      <div className="mx-auto max-w-7xl">
+        <header className="hero-stage mb-6 grid gap-4 px-4 py-5 md:px-6 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
           <div className="flex items-center gap-3">
             <Link href="/" className="icon-button" aria-label="Go home">
               <Home className="h-5 w-5" />
@@ -652,8 +650,10 @@ function PlayPageContent() {
           </div>
 
           <div className="flex flex-col items-center text-center">
-            <BrandLogo variant="primary" imageClassName="h-24 w-24 object-contain drop-shadow-[0_0_28px_rgba(255,43,214,0.34)]" />
-            <h1 className="sr-only">Bollywood Connect</h1>
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold shadow-lg shadow-cinema-red/10">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h1 className="mt-2 text-xl font-black text-white">Connection Board</h1>
             <p className="mt-1 text-sm text-gray-400">Build the cleanest path from first frame to final star.</p>
           </div>
 
@@ -692,7 +692,7 @@ function PlayPageContent() {
           )}
         </AnimatePresence>
 
-        <section className="game-card mb-4 overflow-hidden p-4 md:p-5">
+        <section className="game-card mb-4 overflow-hidden p-4 md:p-6">
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)] lg:items-center">
             <ActorSpotlight actor={game.startActor} label="Start" tone="gold" />
 
@@ -705,7 +705,7 @@ function PlayPageContent() {
               >
                 {isWon ? <Sparkles className="h-8 w-8" /> : <ArrowRight className="h-8 w-8" />}
               </motion.div>
-              <div className="rounded-lg border border-cinema-gold/20 bg-black/20 px-4 py-2 text-center">
+              <div className="rounded-2xl border border-cinema-gold/20 bg-black/20 px-4 py-2 text-center">
                 <p className="section-title">Your Path</p>
                 <p className="mt-1 text-sm text-gray-400">{game.moves.length} nodes placed</p>
               </div>
@@ -716,14 +716,14 @@ function PlayPageContent() {
           </div>
         </section>
 
-        <section className="game-card mb-4 p-4 md:p-5">
+        <section className="hero-stage mb-4 p-4 md:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="section-title">Your Path</p>
-              <h2 className="mt-1 text-xl font-bold text-white">Current connection rail</h2>
+              <h2 className="mt-1 text-xl font-black text-white">Current connection rail</h2>
             </div>
             <div
-              className={`rounded-lg border px-3 py-2 text-sm font-bold ${
+              className={`rounded-full border px-3 py-2 text-sm font-black ${
                 isMovieTurn
                   ? 'border-cinema-red-light/40 bg-cinema-red/20 text-cinema-red-light'
                   : 'border-cinema-gold/40 bg-cinema-gold/10 text-cinema-gold'
@@ -762,10 +762,10 @@ function PlayPageContent() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={springPop}
-                className="win-burst mt-7 rounded-lg border border-cinema-gold/40 bg-cinema-gold/10 p-6 text-center"
+                className="win-burst mt-7 rounded-[1.5rem] border border-cinema-gold/40 bg-cinema-gold/10 p-6 text-center"
               >
                 <Sparkles className="mx-auto mb-3 h-12 w-12 text-cinema-gold" />
-                <h2 className="gold-gradient mb-2 text-3xl font-bold md:text-4xl">Connection made</h2>
+                <h2 className="gold-gradient mb-2 text-3xl font-black md:text-4xl">Connection made</h2>
                 <p className="mx-auto max-w-2xl text-gray-300">
                   You connected <span className="font-semibold text-cinema-gold">{game.startActor.name}</span> to{' '}
                   <span className="font-semibold text-cinema-red-light">{game.targetActor.name}</span> in {game.movesCount} moves.
@@ -798,7 +798,7 @@ function PlayPageContent() {
           <section className="command-panel p-4 md:p-5">
             <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-center">
               <div className="border-b border-cinema-600/40 pb-4 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-4">
-                <p className={`text-xl font-bold ${isMovieTurn ? 'text-cinema-red-light' : 'text-cinema-gold'}`}>{turnLabel}</p>
+                <p className={`text-xl font-black ${isMovieTurn ? 'text-cinema-red-light' : 'text-cinema-gold'}`}>{turnLabel}</p>
                 <p className="mt-2 text-sm leading-6 text-gray-400">{turnHelp}</p>
               </div>
 
@@ -867,7 +867,7 @@ function PlayPageContent() {
                           <button
                             key={hint.id}
                             onClick={() => handleHint(hint.id)}
-                            className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm text-gray-200 transition-colors hover:bg-cinema-700/75 hover:text-white"
+                            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm text-gray-200 transition-colors hover:bg-white/[0.06] hover:text-white"
                           >
                             {hint.label}
                             <Lightbulb className="h-4 w-4 text-cinema-teal" />
@@ -896,7 +896,7 @@ export default function PlayPage() {
             transition={{ duration: 1.2, repeat: Infinity }}
             className="game-card flex flex-col items-center gap-3 px-6 py-5 text-lg font-bold text-cinema-gold"
           >
-            <BrandLogo variant="gold" imageClassName="h-20 w-20 object-contain" />
+            <Sparkles className="h-8 w-8" />
             <span>Loading...</span>
           </motion.div>
         </div>

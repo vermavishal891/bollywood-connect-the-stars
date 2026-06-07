@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { Clock, Film, Home, Loader2, Medal, Star, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getLeaderboard } from '@/lib/api';
-import BrandLogo from '@/components/BrandLogo';
 
 const filters = ['all', 'easy', 'medium', 'hard', 'legend'];
 
@@ -31,16 +30,18 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-6">
-      <div className="mx-auto max-w-5xl">
+    <div className="cinematic-page">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex items-center justify-between gap-4">
           <Link href="/" className="icon-button" aria-label="Go home">
             <Home className="h-5 w-5" />
           </Link>
           <div className="text-center">
-            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-16 w-16 object-contain" />
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
+              <Trophy className="h-6 w-6" />
+            </div>
             <p className="section-title">High Scores</p>
-            <h1 className="mt-1 text-3xl font-bold text-white md:text-4xl">Leaderboard</h1>
+            <h1 className="mt-1 font-display text-3xl font-black text-white md:text-5xl">Star Leaderboard</h1>
           </div>
           <div className="h-11 w-11" />
         </div>
@@ -50,10 +51,10 @@ export default function LeaderboardPage() {
             <button
               key={difficulty}
               onClick={() => setFilter(difficulty)}
-              className={`rounded-lg border px-4 py-2 text-sm font-semibold capitalize transition-all ${
+              className={`rounded-full border px-4 py-2 text-sm font-bold capitalize transition-all ${
                 filter === difficulty
-                  ? 'border-cinema-gold bg-cinema-gold text-cinema-900'
-                  : 'border-cinema-600/50 bg-black/20 text-gray-200 hover:border-cinema-gold/50 hover:text-white'
+                  ? 'border-cinema-gold bg-cinema-gold text-cinema-950'
+                  : 'border-cinema-gold/15 bg-black/25 text-gray-200 hover:border-cinema-gold/50 hover:text-white'
               }`}
             >
               {difficulty}
@@ -76,14 +77,20 @@ export default function LeaderboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="game-card overflow-hidden p-3 md:p-5">
+            <div className="hidden grid-cols-[80px_minmax(0,1fr)_260px] gap-4 border-b border-cinema-gold/10 px-4 py-3 text-xs font-black uppercase tracking-[0.2em] text-cinema-gold md:grid">
+              <span>Rank</span>
+              <span>Player</span>
+              <span className="text-center">Scoreline</span>
+            </div>
+            <div className="space-y-3 pt-3">
             {entries.map((entry, index) => (
               <motion.div
                 key={entry.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
-                className={`game-card grid gap-4 p-4 md:grid-cols-[72px_minmax(0,1fr)_auto] md:items-center ${
+                className={`grid gap-4 rounded-2xl border bg-black/20 p-4 md:grid-cols-[72px_minmax(0,1fr)_auto] md:items-center ${
                   index < 3 ? 'border-cinema-gold/40' : ''
                 }`}
               >
@@ -99,8 +106,8 @@ export default function LeaderboardPage() {
 
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-lg font-bold text-white">{entry.playerName}</p>
-                    <span className="rounded-md border border-cinema-600/50 bg-black/20 px-2 py-1 text-xs font-bold uppercase tracking-[0.16em] text-gray-400">
+                    <p className="truncate text-lg font-black text-white">{entry.playerName}</p>
+                    <span className="rounded-full border border-cinema-gold/15 bg-black/20 px-2 py-1 text-xs font-bold uppercase tracking-[0.16em] text-gray-400">
                       {entry.difficulty}
                     </span>
                   </div>
@@ -128,6 +135,7 @@ export default function LeaderboardPage() {
                 </div>
               </motion.div>
             ))}
+            </div>
           </div>
         )}
       </div>

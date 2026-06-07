@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { Home, User, Save, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth-context';
-import BrandLogo from '@/components/BrandLogo';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -68,7 +67,9 @@ export default function SettingsPage() {
             <Home className="w-6 h-6" />
           </Link>
           <div className="text-center">
-            <BrandLogo variant="gold" className="mx-auto mb-1" imageClassName="h-14 w-14 object-contain" />
+            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-lg border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
+              <User className="h-5 w-5" />
+            </div>
             <h1 className="text-2xl font-bold text-white">Settings</h1>
           </div>
           <div className="w-6" />

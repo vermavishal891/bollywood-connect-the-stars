@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Film, Lightbulb, RotateCcw, Share2, Star, Trophy, Undo2 } from 'lucide-react';
-import BrandLogo from '@/components/BrandLogo';
 
 export default function HowToPlayPage() {
   const steps = [
@@ -48,21 +47,23 @@ export default function HowToPlayPage() {
   ];
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-6">
-      <div className="mx-auto max-w-4xl">
+    <div className="cinematic-page">
+      <div className="mx-auto max-w-6xl">
         <Link href="/" className="mb-7 inline-flex items-center gap-2 text-cinema-gold transition-colors hover:text-white">
           <ArrowLeft className="h-5 w-5" />
           Back to Home
         </Link>
 
-        <div className="mb-10">
-          <BrandLogo variant="gold" className="mb-4 justify-start" imageClassName="h-24 w-24 object-contain" />
+        <header className="hero-stage mb-10 px-6 py-8 md:px-10 md:py-10">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/35 bg-cinema-gold/10 text-cinema-gold">
+            <Lightbulb className="h-7 w-7" />
+          </div>
           <p className="section-title">Rules</p>
-          <h1 className="mt-2 text-4xl font-bold text-white md:text-5xl">How to Play</h1>
+          <h1 className="mt-3 font-display text-4xl font-black text-white md:text-6xl">How to Play</h1>
           <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-400">
             Link two Indian film stars through movies they share. The path alternates actor, movie, actor until the target is reached.
           </p>
-        </div>
+        </header>
 
         <div className="mb-12 grid gap-4 md:grid-cols-3">
           {steps.map((step, index) => (
@@ -71,19 +72,19 @@ export default function HowToPlayPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.08 }}
-              className="cinema-card p-5"
+              className="mode-card p-6"
             >
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg border border-cinema-gold/30 bg-cinema-gold/10">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-cinema-gold/30 bg-cinema-gold/10">
                 {step.icon}
               </div>
               <span className="section-title">Step {index + 1}</span>
-              <h3 className="mt-2 text-xl font-bold text-white">{step.title}</h3>
+              <h3 className="mt-2 text-xl font-black text-white">{step.title}</h3>
               <p className="mt-2 text-sm leading-6 text-gray-400">{step.description}</p>
             </motion.div>
           ))}
         </div>
 
-        <section className="game-card mb-12 p-6">
+        <section className="game-card mb-12 p-6 md:p-8">
           <p className="section-title">Example Path</p>
           <div className="mt-5 flex flex-wrap items-center gap-3 text-base">
             <span className="node-actor">
@@ -118,7 +119,7 @@ export default function HowToPlayPage() {
                 className="cinema-card p-5"
               >
                 <div className="mb-3 text-cinema-gold">{feature.icon}</div>
-                <h3 className="font-bold text-white">{feature.title}</h3>
+                <h3 className="font-black text-white">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-gray-400">{feature.description}</p>
               </motion.div>
             ))}

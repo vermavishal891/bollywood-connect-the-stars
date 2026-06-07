@@ -6,6 +6,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import UsernameModal from '@/components/UsernameModal';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'Bollywood Connect - Connect the Stars',
   description: 'A daily and endless Bollywood trivia web game where players connect two Indian film stars through shared movies.',
   icons: {
@@ -34,11 +35,11 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen">
+      <body className="min-h-screen bottom-nav-safe">
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <AuthProvider>
             <Navbar />
