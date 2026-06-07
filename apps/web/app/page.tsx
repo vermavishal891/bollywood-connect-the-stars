@@ -21,7 +21,7 @@ import { DIFFICULTIES, GAME_MODES, REGIONS, THEMES } from '@bollywood-connect/sh
 import BrandLogo from '@/components/BrandLogo';
 import { getRegions } from '@/lib/api';
 
-const FEATURED_PUZZLE_HREF = '/play?mode=shortest&difficulty=medium&startActorId=116&targetActorId=1990';
+const FEATURED_PUZZLE_HREF = '/play?mode=shortest&difficulty=medium&startActorId=93&targetActorId=205';
 
 function getModeHref(modeId: string, difficulty: string) {
   if (modeId === 'daily') return '/daily';
@@ -183,7 +183,7 @@ export default function HomePage() {
               <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
                   <p className="section-title">Featured Puzzle</p>
-                  <h2 className="mt-2 text-2xl font-black text-white">Amitabh Bachchan to Alia Bhatt</h2>
+                  <h2 className="mt-2 text-2xl font-black text-white">Shah Rukh Khan to Deepika Padukone</h2>
                 </div>
                 <Sparkles className="h-8 w-8 text-cinema-gold" />
               </div>
