@@ -9,10 +9,12 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
     @apply min-h-screen bg-cinema-900 text-white antialiased;
+    overflow-x: hidden;
     background:
       radial-gradient(920px 560px at 18% -8%, rgba(20, 92, 255, 0.28), transparent 64%),
       radial-gradient(760px 520px at 88% 8%, rgba(255, 43, 214, 0.18), transparent 66%),
@@ -134,7 +136,7 @@
   }
 
   .cinematic-page {
-    @apply relative min-h-screen overflow-hidden px-4 pb-14 pt-8 md:px-6 md:pb-20;
+    @apply relative min-h-screen overflow-x-hidden px-4 pb-14 pt-8 md:px-6 md:pb-20;
   }
 
   .cinematic-page::before,
