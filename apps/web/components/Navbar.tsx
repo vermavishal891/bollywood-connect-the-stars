@@ -95,6 +95,34 @@ export default function Navbar() {
           </div>
           </div>
         </div>
+        <div className="border-t border-cinema-gold/10 px-3 pb-2 md:hidden">
+          {user ? (
+            <div className="mx-auto flex max-w-sm items-center justify-between gap-2 rounded-2xl border border-cinema-gold/15 bg-black/25 p-1.5">
+              <Link
+                href="/settings"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-gray-200 transition-all hover:bg-white/[0.06] hover:text-white"
+              >
+                {user.imageUrl ? (
+                  <img src={user.imageUrl} alt={user.username} className="h-6 w-6 rounded-full" />
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
+                <span className="truncate">{user.username}</span>
+              </Link>
+              <button
+                onClick={logout}
+                className="icon-button h-10 w-10 text-gray-400 hover:text-cinema-red-light"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="mx-auto flex max-w-sm justify-end">
+              <GoogleLoginButton width="210" />
+            </div>
+          )}
+        </div>
       </nav>
 
       <nav className="fixed inset-x-3 bottom-3 z-50 rounded-[1.35rem] border border-cinema-gold/20 bg-cinema-950/88 p-1.5 shadow-2xl shadow-black/55 backdrop-blur-2xl md:hidden">

@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export default function GoogleLoginButton() {
+export default function GoogleLoginButton({ width }: { width?: string }) {
   const { login } = useAuth();
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -48,6 +48,7 @@ export default function GoogleLoginButton() {
       shape="pill"
       size="medium"
       text="signin_with"
+      width={width}
     />
   );
 }
